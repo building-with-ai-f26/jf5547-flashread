@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>[Your Product Name] · Building with AI (Fall 2026)</title>
+  <title>FlashRead · Building with AI (Fall 2026)</title>
 
   <!-- Week 1: create your PostHog account only.
        Build 2: paste your project's current PostHog web snippet here,
@@ -137,6 +137,14 @@
       font-size: 13px;
       color: var(--muted);
     }
+    .screenshot {
+      display: block;
+      max-width: 100%;
+      height: auto;
+      margin: 8px 0 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
   </style>
 </head>
 <body>
@@ -144,8 +152,8 @@
     <!-- HERO / PRODUCT PITCH -->
     <header>
       <span class="eyebrow">NYU Stern · Building with AI · Fall 2026</span>
-      <h1>[Your Product Name]</h1>
-      <p class="tagline">[One clear sentence: Who is this for, and what painful job does it do for them?]</p>
+      <h1>FlashRead</h1>
+      <p class="tagline">FlashRead helps university students read academic PDFs more efficiently through Rapid Serial Visual Presentation (RSVP), showing one word at a time at an adjustable speed.</p>
       <div class="cta-row">
         <a class="btn" href="#live-demo" onclick="window.posthog && posthog.capture('clicked_try_product')">See the Product →</a>
         <a class="btn btn-secondary" href="#prd">Read the Living PRD</a>
@@ -157,11 +165,12 @@
     <section id="live-demo">
       <h2>Product Showcase (Prototype / Live App / 2-Min Video)</h2>
       <p>
-        <strong>Current Status:</strong> [Build 1: local prototype / Builds 2–4: local app / Build 5: cloud app]<br />
-        <strong>Demo:</strong> [Add a screenshot or GIF now; add the live cloud app URL in Build 5.]
+        <strong>Current Status:</strong> Build 1: local prototype (runs on my Windows laptop at <code>http://localhost:8000</code>)<br />
+        <strong>Demo:</strong> Screenshot of the local prototype below. The live cloud app URL and two-minute video come in Build 5.
       </p>
+      <img class="screenshot" src="assets/flashread-build1.png" alt="FlashRead Build 1 prototype paused on the word 'FlashRead', word 8 of 47, with Play, Pause, and Rewind 10 words buttons and a speed slider set to 350 words per minute." />
       <p class="meta">
-        Ask your coding agent to embed a screenshot or GIF of your local prototype for Build 1. Keep this evidence current, then add your cloud app link and two-minute video in Build 5.
+        Build 1 prototype running locally, paused on word 8 of a 47-word, two-page test PDF at 350 words per minute.
       </p>
     </section>
 
@@ -171,31 +180,33 @@
       <p class="meta">Updated every week as we test with real users and learn what works.</p>
 
       <h3>1. Target User & The Job to Be Done</h3>
-      <p><strong>Who is this for?</strong> [Name a specific, reachable person or role you have direct access to.]</p>
-      <p><strong>The painful "Before" workflow:</strong> [How do they do this today, and why is it slow, manual, or broken?]</p>
-      <p><strong>The "After" workflow with this product:</strong> [What does your tool do for them in one sitting?]</p>
+      <p><strong>Who is this for?</strong> NYU Stern MBA students with lengthy assigned readings, including academic articles and case studies.</p>
+      <p><strong>The problem:</strong> Long, dense PDFs are time-consuming and can make it difficult to maintain attention and reading momentum.</p>
+      <p><strong>The painful "Before" workflow:</strong> Students scroll through dense PDFs and repeatedly lose their place or focus.</p>
+      <p><strong>The "After" workflow with this product:</strong> Students upload a PDF and read it word by word at their preferred pace, with playback controls to pause, go back, and change speed.</p>
+      <p class="meta">FlashRead is meant to help students keep their place and momentum. It does not claim that reading faster improves comprehension; that still has to be tested with real students.</p>
 
       <h3>2. Scope & Explicit Non-Goals</h3>
       <ul>
-        <li><strong>In Scope (Core Workflow):</strong> [The 1 main workflow this product does reliably]</li>
-        <li><strong>Out of Scope #1:</strong> [Feature you are deliberately NOT building in 6 weeks]</li>
-        <li><strong>Out of Scope #2:</strong> [Feature you are deliberately NOT building in 6 weeks]</li>
-        <li><strong>Out of Scope #3:</strong> [Feature you are deliberately NOT building in 6 weeks]</li>
+        <li><strong>In Scope (Core Workflow):</strong> Upload a text-based PDF → extract its text → show one word at a time → play, pause, rewind 10 words, and adjust speed from 150 to 600 words per minute.</li>
+        <li><strong>Out of Scope #1:</strong> AI summarization of readings.</li>
+        <li><strong>Out of Scope #2:</strong> OCR for scanned PDFs (pages that are images of text).</li>
+        <li><strong>Out of Scope #3:</strong> Collaborative annotations or shared notes.</li>
       </ul>
 
       <h3>3. How It Works Under the Hood & Riskiest Assumption (Week 2+)</h3>
-      <p><strong>Riskiest Assumption:</strong> [What is the #1 technical or user risk that could sink this product?]</p>
-      <p><strong>Simple Architecture:</strong> [User Input] → [Your App / Server] → [AI Model / Tool] → [Output]</p>
+      <p><strong>Riskiest Assumption:</strong> That text pulled from real academic PDFs (multi-column layouts, headers, footers, footnotes, page numbers) comes out clean and in reading order, and that students can still follow the argument when reading one word at a time. Build 1 has only been tested with a simple generated PDF, so this is unproven.</p>
+      <p><strong>Simple Architecture:</strong> [Student uploads PDF] → [Single web page in the browser, served locally] → [PDF.js extracts the text; no AI model] → [One word at a time with playback controls]</p>
 
       <h3>4. Unit Economics & Analytics Snapshot (Updated Weekly)</h3>
       <div class="grid-2">
         <div class="stat-box">
           <div class="stat-label">Cumulative Build Spend</div>
-          <div class="stat-value">[Record actual spend]</div>
+          <div class="stat-value">$[confirm]</div>
         </div>
         <div class="stat-box">
           <div class="stat-label">Est. Cost Per User Run</div>
-          <div class="stat-value">[Not yet estimated]</div>
+          <div class="stat-value">$0 (no paid APIs; runs in the browser)</div>
         </div>
         <div class="stat-box">
           <div class="stat-label">User Evidence (Analytics from Build 2)</div>
@@ -216,10 +227,12 @@
       <div class="log-entry">
         <h3>Build 1 · Intent.md & Throwaway Prototype (Due Nov 9)</h3>
         <ul>
-          <li><strong>What shipped:</strong> [What you actually built; link your local prototype screenshot or GIF above.]</li>
-          <li><strong>Things learned with AI:</strong> [What you learned from AI practice and Terminus Episodes 1 and 2.]</li>
-          <li><strong>What broke / changed in PRD:</strong> [Fill in]</li>
-          <li><strong>Cost & time this week:</strong> $[0.00] · [0] hours</li>
+          <li><strong>What shipped:</strong> A local FlashRead RSVP prototype, PRD v1 (above), and a real screenshot of the running app. The prototype is a single page (<code>app/index.html</code>). It uploads a text-based PDF, extracts the text in the browser with PDF.js, and shows one word at a time in a fixed spot. Controls: Play, Pause, Rewind 10 words, and a speed slider from 150 to 600 words per minute. It also shows progress ("Word 8 of 47"), handles the end of the document, and shows a clear message for unreadable PDFs. A small built-in PowerShell script (<code>app/serve.ps1</code>) runs it at <code>http://localhost:8000</code> without installing Python or Node.js. See the <a href="#live-demo">screenshot above</a>.</li>
+          <li><strong>Things learned with AI:</strong> I learned basic Git and GitHub workflows, including cloning a repository, plus how to direct a coding agent (Cursor), serve a web app locally, and verify it in the browser. Asking the agent for a plan first and approving it before any code kept the prototype to one file I can read. I also learned to ask for proof rather than accept "it works": the agent's first test PDF was malformed and cut off the last word, which looked like an app bug until the test file was fixed.</li>
+          <li><strong>What broke / changed in PRD:</strong> GitHub Pages initially failed with an internal server error; the Product Page deployment still needs to be confirmed. Cursor hit its usage limit partway through the build. Python and Node.js were not installed, so the prototype runs from a small PowerShell server instead. That server first froze on idle browser connections and kept running when a second copy was started; both issues were corrected (a read timeout and a clear error on a busy port). PRD change: scope narrowed to text-based PDFs, with OCR explicitly out of scope.</li>
+          <li><strong>Testing evidence:</strong> Cursor ran automated browser tests in its built-in browser against a generated two-page, 47-word text PDF. All passed. Passed: all 47 words extracted in order across both pages; Play advanced through to the end and stopped with an end message; Pause held the same word for 0.8 seconds; Rewind moved back 10 words (and stops at word 1); the slider is limited to 150–600; measured timing was about 404 ms per word at 150 WPM (expected 400) and 106 ms at 600 WPM (expected 100); a broken PDF showed an error and kept Play disabled; uploading a new PDF reset to word 1. The uploads and button clicks were scripted in the browser. Manual testing with the Windows file picker and a real academic reading is still pending.</li>
+          <li><strong>Known limitations:</strong> Not yet tested by hand, on a real academic article or case study, or by any outside user. Scanned PDFs produce no words (no OCR). Multi-column layouts, headers, footers, and footnotes may come out in a messy order. Needs internet to load PDF.js. Nothing is saved; closing the tab loses your place. Opening <code>index.html</code> by double-clicking it was not tested.</li>
+          <li><strong>Cost & time this week:</strong> Purchased $20 of additional Cursor credits after reaching the initial usage limit; the amount of those credits actually used is not yet confirmed. No paid APIs or hosting. About 4 hours, including installation, setup, development, and troubleshooting.</li>
         </ul>
       </div>
 

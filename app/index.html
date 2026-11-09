@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FlashRead</title>
+  <style>
+    :root {
+      --bg: #f4f1ea;
+      --card: #fffdf8;
+      --text: #1c1915;
+      --muted: #5c564c;
+      --line: #e4ddd0;
+      --accent: #1f4fd8;
+      --accent-dark: #163aa3;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    main {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 40px 20px 64px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 32px;
+      letter-spacing: -0.03em;
+    }
+
+    .lede {
+      margin: 0 0 24px;
+      color: var(--muted);
+    }
+
+    .upload {
+      display: inline-block;
+      margin-bottom: 12px;
+      padding: 10px 16px;
+      border-radius: 8px;
+      background: var(--accent);
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .upload:hover { background: var(--accent-dark); }
+
+    .upload input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+    }
+
+    #status {
+      min-height: 1.5em;
+      margin: 0 0 20px;
+      color: var(--muted);
+    }
+
+    .stage {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 180px;
+      margin-bottom: 12px;
+      padding: 24px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--card);
+    }
+
+    #word {
+      margin: 0;
+      font-size: 56px;
+      line-height: 1.15;
+      text-align: center;
+      overflow-wrap: anywhere;
+    }
+
+    #progress {
+      min-height: 1.5em;
+      margin: 0 0 16px;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    button {
+      padding: 10px 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: white;
+      color: var(--text);
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    button:hover:not(:disabled) { border-color: var(--accent); }
+
+    button:disabled {
+      color: #9a9388;
+      cursor: not-allowed;
+    }
+
+    .speed {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .speed input { width: 100%; }
+
+    .note {
+      margin: 28px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>FlashRead</h1>
+    <p class="lede">Upload a text-based academic PDF. FlashRead shows one word at a time in the same spot.</p>
+
+    <label class="upload">
+      Choose a PDF
+      <input id="pdf-input" type="file" accept="application/pdf,.pdf" />
+    </label>
+    <p id="status">Choose a text-based PDF to begin.</p>
+
+    <section class="stage" aria-label="Current word">
+      <p id="word">Upload a PDF</p>
+    </section>
+    <p id="progress"></p>
+
+    <div class="controls">
+      <button id="play" type="button">Play</button>
+      <button id="pause" type="button">Pause</button>
+      <button id="rewind" type="button">Rewind 10 words</button>
+    </div>
+
+    <label class="speed">
+      <span>Speed</span>
+      <input id="speed" type="range" min="150" max="600" step="10" value="300" />
+      <span><span id="speed-value">300</span> wpm</span>
+    </label>
+
+    <p class="note">
+      The PDF stays on this computer. The page reads its text in the browser with PDF.js.
+      A scanned PDF is a picture of the page, so this version cannot pull words out of it.
+      Loading the page needs an internet connection so PDF.js can download.
+    </p>
+  </main>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    // PDF.js turns the PDF into text. The rest of this script is the reader.
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+    var pdfInput = document.querySelector("#pdf-input");
+    var statusEl = document.querySelector("#status");
+    var wordEl = document.querySelector("#word");
+    var progressEl = document.querySelector("#progress");
+    var playBtn = document.querySelector("#play");
+    var pauseBtn = document.querySelector("#pause");
+    var rewindBtn = document.querySelector("#rewind");
+    var speedInput = document.querySelector("#speed");
+    var speedValue = document.querySelector("#speed-value");
+
+    var words = [];
+    var index = 0;
+    var playing = false;
+    var timerId = null;
+
+    function setStatus(message) {
+      statusEl.textContent = message;
+    }
+
+    // 300 words per minute means one word every 200 milliseconds.
+    function delayMs() {
+      return 60000 / Number(speedInput.value);
+    }
+
+    function showCurrentWord() {
+      wordEl.textContent = words[index];
+      progressEl.textContent = "Word " + (index + 1) + " of " + words.length;
+    }
+
+    function refreshControls() {
+      var hasWords = words.length > 0;
+      playBtn.disabled = !hasWords || playing;
+      pauseBtn.disabled = !hasWords || !playing;
+      rewindBtn.disabled = !hasWords;
+      speedInput.disabled = !hasWords;
+    }
+
+    function stopTimer() {
+      if (timerId !== null) {
+        clearTimeout(timerId);
+        timerId = null;
+      }
+    }
+
+    function scheduleAdvance() {
+      stopTimer();
+      timerId = setTimeout(function () {
+        timerId = null;
+        if (!playing) {
+          return;
+        }
+        if (index >= words.length - 1) {
+          playing = false;
+          refreshControls();
+          setStatus("End of the document. Press Play to start again.");
+          return;
+        }
+        index += 1;
+        showCurrentWord();
+        scheduleAdvance();
+      }, delayMs());
+    }
+
+    function play() {
+      if (words.length === 0 || playing) {
+        return;
+      }
+      if (index >= words.length - 1) {
+        index = 0;
+        showCurrentWord();
+      }
+      playing = true;
+      refreshControls();
+      setStatus("Playing at " + speedInput.value + " words per minute.");
+      scheduleAdvance();
+    }
+
+    function pause() {
+      playing = false;
+      stopTimer();
+      refreshControls();
+      if (words.length > 0) {
+        setStatus("Paused.");
+      }
+    }
+
+    function rewind() {
+      if (words.length === 0) {
+        return;
+      }
+      var previous = index;
+      index = Math.max(0, index - 10);
+      var moved = previous - index;
+      showCurrentWord();
+      if (moved === 0) {
+        setStatus("Already at the first word.");
+      } else if (playing) {
+        setStatus("Rewound " + moved + " words.");
+      } else {
+        setStatus("Paused. Rewound " + moved + " words.");
+      }
+      if (playing) {
+        scheduleAdvance();
+      }
+    }
+
+    function extractWords(buffer) {
+      return pdfjsLib.getDocument({ data: buffer }).promise.then(function (pdf) {
+        var pageNumber = 1;
+        var chunks = [];
+
+        function readPage() {
+          if (pageNumber > pdf.numPages) {
+            return chunks.join("\n").split(/\s+/).filter(function (word) {
+              return word.length > 0;
+            });
+          }
+          return pdf.getPage(pageNumber).then(function (page) {
+            return page.getTextContent().then(function (content) {
+              var pageText = "";
+              content.items.forEach(function (item) {
+                if (!item.str) {
+                  return;
+                }
+                pageText += item.str;
+                pageText += item.hasEOL ? "\n" : " ";
+              });
+              chunks.push(pageText);
+              pageNumber += 1;
+              return readPage();
+            });
+          });
+        }
+
+        return readPage();
+      });
+    }
+
+    playBtn.addEventListener("click", play);
+    pauseBtn.addEventListener("click", pause);
+    rewindBtn.addEventListener("click", rewind);
+
+    speedInput.addEventListener("input", function () {
+      speedValue.textContent = speedInput.value;
+      if (playing) {
+        setStatus("Playing at " + speedInput.value + " words per minute.");
+        scheduleAdvance();
+      }
+    });
+
+    pdfInput.addEventListener("change", function () {
+      var file = pdfInput.files && pdfInput.files[0];
+      pdfInput.value = "";
+      if (!file) {
+        return;
+      }
+
+      pause();
+      words = [];
+      index = 0;
+      refreshControls();
+      wordEl.textContent = "…";
+      progressEl.textContent = "";
+      setStatus("Reading the PDF…");
+
+      file.arrayBuffer().then(function (buffer) {
+        return extractWords(buffer);
+      }).then(function (extracted) {
+        if (extracted.length === 0) {
+          wordEl.textContent = "—";
+          setStatus("No words found. Choose a text-based PDF. Scanned pages keep their words inside a picture.");
+          return;
+        }
+        words = extracted;
+        index = 0;
+        showCurrentWord();
+        refreshControls();
+        setStatus("Ready. " + words.length + " words.");
+      }).catch(function () {
+        wordEl.textContent = "—";
+        setStatus("Could not read that PDF. Try another text-based PDF.");
+      });
+    });
+
+    refreshControls();
+  </script>
+</body>
+</html>

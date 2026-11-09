@@ -1,11 +1,34 @@
-# [Project Name]
+# FlashRead
 
-> **One-line pitch:** [Who is this for, and what job does it do for them?]
+> **One-line pitch:** FlashRead helps university students read academic PDFs more efficiently through Rapid Serial Visual Presentation (RSVP), showing one word at a time at an adjustable speed.
 
-- **Builder:** [Your Name] (`@github-handle`)
-- **Pod:** [Pod Name / Number]
-- **Product Page & Living PRD:** [Add your GitHub Pages URL]
+- **Builder:** John Fennell (`@jf5547`)
+- **Pod:** Pod 4
+- **Product Page & Living PRD:** https://building-with-ai-f26.github.io/jf5547-flashread/ (live once GitHub Pages is deployed from `main` → `/docs`)
 - **App:** runs locally through Week 4; add a cloud URL in Build 5.
+
+## What FlashRead does (Build 1)
+
+Upload a text-based PDF and FlashRead extracts its text in your browser, then shows it one word at a time in a fixed spot. You can **Play**, **Pause**, **Rewind 10 words**, and set the speed from **150 to 600 words per minute**. The PDF never leaves your computer. There is no AI model and no API key.
+
+![FlashRead Build 1 prototype](docs/assets/flashread-build1.png)
+
+**Limitations:** scanned PDFs (images of text) produce no words. Multi-column papers may extract in a messy order. Loading the page needs internet for PDF.js. Your place is not saved when you close the tab.
+
+## Run FlashRead on Windows
+
+**Dependencies:** none to install. The app uses [PDF.js 3.11.174](https://mozilla.github.io/pdf.js/), loaded from the cdnjs CDN, and Windows PowerShell, which is built into Windows, to serve the page locally.
+
+1. Open the project folder in Cursor, then open a terminal: **Terminal → New Terminal**.
+2. Run:
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File app\serve.ps1
+   ```
+3. Your browser opens `http://localhost:8000`. If it doesn't, open that address yourself.
+4. Click **Choose a PDF**, pick a text-based PDF, then press **Play**.
+5. When finished, click in the terminal and press **Ctrl+C** to stop the server.
+
+If you see "Only one usage of each socket address", FlashRead is already running in another terminal. Use that one, or stop it with Ctrl+C first.
 
 ## Start here: Build 1
 
@@ -38,8 +61,8 @@ Create your PostHog account in Week 1. Install it on the Product Page and local 
 Clone **your own repository** and ask your coding agent to document the exact install and run commands here and in `AGENTS.md`.
 
 ```bash
-git clone https://github.com/building-with-ai-f26/<your-repo-name>.git
-cd <your-repo-name>
+git clone https://github.com/building-with-ai-f26/jf5547-flashread.git
+cd jf5547-flashread
 ```
 
 If your app needs API keys, use a local environment file such as `.env`. Keep private keys out of source code, browser code, screenshots, and commits. The template ignores `.env`; `.env.example` contains placeholders only.

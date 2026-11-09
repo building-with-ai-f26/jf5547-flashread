@@ -3,15 +3,15 @@
 > Give this file to your coding agent and check that it is using these instructions. Keep the stack, commands, and ground rules current.
 
 ## 1. Project Overview
-- **What this repo builds:** [1–2 sentence summary]
-- **Primary user & core workflow:** [See the living PRD in `docs/index.html`]
-- **Tech stack:** [e.g., Python 3.12 / FastAPI / Next.js / SQLite / OpenRouter API]
+- **What this repo builds:** FlashRead, a local web app that shows a text-based academic PDF one word at a time (RSVP) with play, pause, rewind 10 words, and a 150–600 WPM speed slider.
+- **Primary user & core workflow:** NYU Stern MBA students with long assigned readings. See the living PRD in `docs/index.html`.
+- **Tech stack:** One static HTML/CSS/JavaScript page (`app/index.html`) + PDF.js 3.11.174 from the cdnjs CDN. Served locally by `app/serve.ps1`, which uses built-in Windows PowerShell. No backend, database, AI model, or API keys.
 
 ## 2. Commands
-- **Install dependencies:** `[e.g., npm install / uv sync]`
-- **Run locally:** `[e.g., npm run dev]`
-- **Run deterministic tests:** `[e.g., pytest / npm test]`
-- **Run model evals:** `[e.g., python tests/eval.py]`
+- **Install dependencies:** none.
+- **Run locally:** `powershell -ExecutionPolicy Bypass -File app\serve.ps1`, then open `http://localhost:8000`.
+- **Run deterministic tests:** none yet; Build 1 was checked manually in the browser. See the Build 1 log in `docs/index.html`.
+- **Run model evals:** not applicable; there is no AI model yet.
 
 ## 3. Non-Negotiable Engineering Rules
 1. **Plan before coding:** Before touching multiple files, propose a brief plan and wait for approval.
