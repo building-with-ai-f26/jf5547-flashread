@@ -12,6 +12,7 @@
 - `app/serve.ps1` — local server and the summary proxy.
 - `docs/index.html` — public Product Page, PRD, and build log.
 - `docs/assets/flashread-build1.png` — real screenshot of the Build 1 reader.
+- `docs/assets/posthog-events.png` — real PostHog Activity screenshot from Build 2.
 - `AGENTS.md` — this file.
 - `README.md` — how to run the app.
 - `.env.example` — names the OpenRouter variable. The real `.env` is gitignored.
