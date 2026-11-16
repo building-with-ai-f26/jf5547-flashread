@@ -4,6 +4,29 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FlashRead</title>
+  <!-- PostHog web snippet. This is the public project token, not a personal API key. -->
+  <script>
+    !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],Object.defineProperty(u,"toString",{configurable:!0,enumerable:!0,writable:!0,value:function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e}}),Object.defineProperty(u.people,"toString",{configurable:!0,enumerable:!0,writable:!0,value:function(){return u.toString(1)+".people (stub)"}}),o="init capture register register_once register_for_session unregister unregister_for_session getFeatureFlag getFeatureFlagResult isFeatureEnabled reloadFeatureFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey getNextSurveyStep identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException loadToolbar get_property getSessionProperty createPersonProfile opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing clear_opt_in_out_capturing debug".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+    posthog.init("phc_kRaNWd2sA5tThvAbEowwwewF8c5kZvoCXU6MJ7TnrWyV", {
+      api_host: "https://us.i.posthog.com",
+      defaults: "2026-08-30",
+      capture_pageview: false,
+      autocapture: false,
+      capture_heatmaps: false,
+      capture_dead_clicks: false,
+      disable_session_recording: true,
+      person_profiles: "identified_only",
+      session_recording: {
+        maskAllInputs: true,
+        maskTextSelector: "#word, #summary, #status"
+      },
+      loaded: function (ph) {
+        ph.register({ page_type: "local_app" });
+        ph.capture("$pageview", { page_type: "local_app" });
+        if (window.flashreadReplaySync) window.flashreadReplaySync();
+      }
+    });
+  </script>
   <style>
     :root {
       --bg: #f4f1ea;
@@ -131,17 +154,42 @@
 
     .speed input { width: 100%; }
 
+    .summary-block { margin-top: 28px; }
+
+    #summary {
+      margin: 12px 0 0;
+      white-space: pre-wrap;
+    }
+
     .note {
-      margin: 28px 0 0;
+      margin: 12px 0 0;
       color: var(--muted);
       font-size: 14px;
     }
+
+    .replay-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-top: 28px;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--card);
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .replay-bar p { margin: 0; flex: 1 1 240px; }
+
+    .replay-bar button[hidden] { display: none; }
   </style>
 </head>
 <body>
   <main>
     <h1>FlashRead</h1>
-    <p class="lede">Upload a text-based academic PDF. FlashRead shows one word at a time in the same spot.</p>
+    <p class="lede">Upload a text-based academic PDF. FlashRead shows one word at a time in the same spot. A short AI summary is optional and runs only when you click the button.</p>
 
     <label class="upload">
       Choose a PDF
@@ -166,11 +214,29 @@
       <span><span id="speed-value">300</span> wpm</span>
     </label>
 
+    <div class="summary-block">
+      <button id="summarize" type="button">Summarize PDF with AI</button>
+      <p id="summary"></p>
+      <p class="note">
+        Summarize sends the extracted words to OpenRouter through this computer's local server.
+        The PDF file and its name stay here, and nothing is sent until you click.
+        Readings longer than 6,000 characters send only the beginning.
+        Do not summarize a document you are not allowed to send to a third-party AI service.
+      </p>
+    </div>
+
     <p class="note">
       The PDF stays on this computer. The page reads its text in the browser with PDF.js.
       A scanned PDF is a picture of the page, so this version cannot pull words out of it.
       Loading the page needs an internet connection so PDF.js can download.
+      Playback events go to PostHog. The PDF text, file name, and summary text do not.
     </p>
+
+    <div class="replay-bar" id="replay-bar">
+      <p id="replay-text">FlashRead can record this visit for product testing. The current word and the AI summary are masked. Recording stays off until you allow it.</p>
+      <button id="replay-allow" type="button">Allow recording</button>
+      <button id="replay-decline" type="button">Not now</button>
+    </div>
   </main>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -188,11 +254,29 @@
     var rewindBtn = document.querySelector("#rewind");
     var speedInput = document.querySelector("#speed");
     var speedValue = document.querySelector("#speed-value");
+    var summarizeBtn = document.querySelector("#summarize");
+    var summaryEl = document.querySelector("#summary");
+    var replayText = document.querySelector("#replay-text");
+    var replayAllow = document.querySelector("#replay-allow");
+    var replayDecline = document.querySelector("#replay-decline");
 
     var words = [];
+    var pageCount = 0;
     var index = 0;
     var playing = false;
     var timerId = null;
+    var summarizing = false;
+
+    function track(name, props) {
+      if (!window.posthog) return;
+      var data = { page_type: "local_app" };
+      if (props) {
+        Object.keys(props).forEach(function (key) {
+          data[key] = props[key];
+        });
+      }
+      posthog.capture(name, data);
+    }
 
     function setStatus(message) {
       statusEl.textContent = message;
@@ -214,6 +298,7 @@
       pauseBtn.disabled = !hasWords || !playing;
       rewindBtn.disabled = !hasWords;
       speedInput.disabled = !hasWords;
+      summarizeBtn.disabled = !hasWords || summarizing;
     }
 
     function stopTimer() {
@@ -234,6 +319,10 @@
           playing = false;
           refreshControls();
           setStatus("End of the document. Press Play to start again.");
+          track("reading_completed", {
+            wpm: Number(speedInput.value),
+            word_count: words.length
+          });
           return;
         }
         index += 1;
@@ -253,15 +342,23 @@
       playing = true;
       refreshControls();
       setStatus("Playing at " + speedInput.value + " words per minute.");
+      track("reading_started", {
+        wpm: Number(speedInput.value),
+        word_count: words.length
+      });
       scheduleAdvance();
     }
 
     function pause() {
+      var wasPlaying = playing;
       playing = false;
       stopTimer();
       refreshControls();
       if (words.length > 0) {
         setStatus("Paused.");
+      }
+      if (wasPlaying) {
+        track("reading_paused", { wpm: Number(speedInput.value) });
       }
     }
 
@@ -285,16 +382,59 @@
       }
     }
 
+    function summarize() {
+      if (words.length === 0 || summarizing) {
+        return;
+      }
+      summarizing = true;
+      refreshControls();
+      summaryEl.textContent = "Summarizing…";
+
+      var fullText = words.join(" ");
+      fetch("/api/summarize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: fullText.slice(0, 6000) })
+      }).then(function (response) {
+        return response.json().then(function (data) {
+          return { ok: response.ok, data: data };
+        });
+      }).then(function (result) {
+        if (!result.ok || !result.data || !result.data.summary) {
+          summaryEl.textContent = (result.data && result.data.error) || "The summary could not be created.";
+          return;
+        }
+        summaryEl.textContent = result.data.summary;
+        if (result.data.truncated) {
+          summaryEl.textContent += " (Only the first 6,000 characters were sent.)";
+        }
+        track("ai_summary_completed", {
+          model: result.data.model,
+          characters_sent: result.data.characters_sent,
+          truncated: !!result.data.truncated
+        });
+      }).catch(function () {
+        summaryEl.textContent = "The summary could not be created. Open FlashRead from the local server and try again.";
+      }).then(function () {
+        summarizing = false;
+        refreshControls();
+      });
+    }
+
     function extractWords(buffer) {
       return pdfjsLib.getDocument({ data: buffer }).promise.then(function (pdf) {
         var pageNumber = 1;
         var chunks = [];
+        var pages = pdf.numPages;
 
         function readPage() {
           if (pageNumber > pdf.numPages) {
-            return chunks.join("\n").split(/\s+/).filter(function (word) {
-              return word.length > 0;
-            });
+            return {
+              words: chunks.join("\n").split(/\s+/).filter(function (word) {
+                return word.length > 0;
+              }),
+              pageCount: pages
+            };
           }
           return pdf.getPage(pageNumber).then(function (page) {
             return page.getTextContent().then(function (content) {
@@ -317,9 +457,47 @@
       });
     }
 
+    window.flashreadReplaySync = function () {
+      var choice = localStorage.getItem("flashread-replay");
+      if (choice === "on" && window.posthog) {
+        posthog.startSessionRecording();
+      }
+      if (choice === "off" && window.posthog && posthog.stopSessionRecording) {
+        posthog.stopSessionRecording();
+      }
+      if (choice === "on") {
+        replayText.textContent = "This visit is being recorded for product testing. The current word and the AI summary are masked.";
+        replayAllow.hidden = true;
+        replayDecline.hidden = false;
+        replayDecline.textContent = "Stop recording";
+      } else if (choice === "off") {
+        replayText.textContent = "Recording is off. Allow it when a tester should be able to review this session.";
+        replayAllow.hidden = false;
+        replayAllow.textContent = "Allow recording";
+        replayDecline.hidden = true;
+      } else {
+        replayText.textContent = "FlashRead can record this visit for product testing. The current word and the AI summary are masked. Recording stays off until you allow it.";
+        replayAllow.hidden = false;
+        replayAllow.textContent = "Allow recording";
+        replayDecline.hidden = false;
+        replayDecline.textContent = "Not now";
+      }
+    };
+
+    replayAllow.addEventListener("click", function () {
+      localStorage.setItem("flashread-replay", "on");
+      window.flashreadReplaySync();
+    });
+
+    replayDecline.addEventListener("click", function () {
+      localStorage.setItem("flashread-replay", "off");
+      window.flashreadReplaySync();
+    });
+
     playBtn.addEventListener("click", play);
     pauseBtn.addEventListener("click", pause);
     rewindBtn.addEventListener("click", rewind);
+    summarizeBtn.addEventListener("click", summarize);
 
     speedInput.addEventListener("input", function () {
       speedValue.textContent = speedInput.value;
@@ -327,6 +505,11 @@
         setStatus("Playing at " + speedInput.value + " words per minute.");
         scheduleAdvance();
       }
+    });
+
+    speedInput.addEventListener("change", function () {
+      if (words.length === 0) return;
+      track("reading_speed_changed", { wpm: Number(speedInput.value) });
     });
 
     pdfInput.addEventListener("change", function () {
@@ -338,7 +521,9 @@
 
       pause();
       words = [];
+      pageCount = 0;
       index = 0;
+      summaryEl.textContent = "";
       refreshControls();
       wordEl.textContent = "…";
       progressEl.textContent = "";
@@ -347,16 +532,21 @@
       file.arrayBuffer().then(function (buffer) {
         return extractWords(buffer);
       }).then(function (extracted) {
-        if (extracted.length === 0) {
+        if (!extracted.words || extracted.words.length === 0) {
           wordEl.textContent = "—";
           setStatus("No words found. Choose a text-based PDF. Scanned pages keep their words inside a picture.");
           return;
         }
-        words = extracted;
+        words = extracted.words;
+        pageCount = extracted.pageCount;
         index = 0;
         showCurrentWord();
         refreshControls();
         setStatus("Ready. " + words.length + " words.");
+        track("pdf_uploaded", {
+          word_count: words.length,
+          page_count: pageCount
+        });
       }).catch(function () {
         wordEl.textContent = "—";
         setStatus("Could not read that PDF. Try another text-based PDF.");
@@ -364,6 +554,7 @@
     });
 
     refreshControls();
+    window.flashreadReplaySync();
   </script>
 </body>
 </html>

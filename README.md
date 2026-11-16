@@ -7,9 +7,11 @@
 - **Product Page & Living PRD:** https://building-with-ai-f26.github.io/jf5547-flashread/ (live once GitHub Pages is deployed from `main` → `/docs`)
 - **App:** runs locally through Week 4; add a cloud URL in Build 5.
 
-## What FlashRead does (Build 1)
+## What FlashRead does
 
-Upload a text-based PDF and FlashRead extracts its text in your browser, then shows it one word at a time in a fixed spot. You can **Play**, **Pause**, **Rewind 10 words**, and set the speed from **150 to 600 words per minute**. The PDF never leaves your computer. There is no AI model and no API key.
+Upload a text-based PDF and FlashRead extracts its text in your browser, then shows it one word at a time in a fixed spot. You can **Play**, **Pause**, **Rewind 10 words**, and set the speed from **150 to 600 words per minute**. The PDF file stays on your computer.
+
+**Summarize PDF with AI** is optional. It sends the extracted words to OpenRouter only after you click, using a key kept in `.env`. The reader works without that key.
 
 ![FlashRead Build 1 prototype](docs/assets/flashread-build1.png)
 
@@ -26,7 +28,10 @@ Upload a text-based PDF and FlashRead extracts its text in your browser, then sh
    ```
 3. Your browser opens `http://localhost:8000`. If it doesn't, open that address yourself.
 4. Click **Choose a PDF**, pick a text-based PDF, then press **Play**.
-5. When finished, click in the terminal and press **Ctrl+C** to stop the server.
+5. Optional summary: copy `.env.example` to `.env`, set `OPENROUTER_API_KEY`, restart the server, then click **Summarize PDF with AI**.
+6. When finished, click in the terminal and press **Ctrl+C** to stop the server.
+
+The page can send playback events to PostHog. It does not send the PDF text or the file name. Session recording starts only after you click **Allow recording**.
 
 If you see "Only one usage of each socket address", FlashRead is already running in another terminal. Use that one, or stop it with Ctrl+C first.
 
