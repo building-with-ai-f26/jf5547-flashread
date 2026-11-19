@@ -19,6 +19,8 @@ $repoRoot = [System.IO.Path]::GetFullPath((Join-Path $root ".."))
 $envFile = Join-Path $repoRoot ".env"
 $narrationDir = Join-Path $root "narration"
 $summaryModel = "openai/gpt-4o-mini"
+$speechModel = "elevenlabs/eleven-v3-conversational"
+$speechVoice = "sarah"
 $maxBodyBytes = 500000
 $chunkChars = 8000
 $maxChunks = 3
@@ -34,6 +36,7 @@ $types = @{
   ".jpg"  = "image/jpeg"
   ".mp4"  = "video/mp4"
   ".wav"  = "audio/wav"
+  ".mp3"  = "audio/mpeg"
 }
 
 New-Item -ItemType Directory -Force -Path $narrationDir | Out-Null
@@ -422,9 +425,25 @@ function Handle-Quiz($stream, [string]$body) {
 }
 
 function Remove-OldNarration {
-  Get-ChildItem -LiteralPath $narrationDir -Filter "*.wav" -ErrorAction SilentlyContinue |
-    Where-Object { $_.LastWriteTime -lt (Get-Date).AddHours(-12) } |
+  Get-ChildItem -LiteralPath $narrationDir -File -ErrorAction SilentlyContinue |
+    Where-Object { $_.Extension -match '^\.(wav|mp3)$' -and $_.LastWriteTime -lt (Get-Date).AddHours(-12) } |
     Remove-Item -Force -ErrorAction SilentlyContinue
+}
+
+function Write-CloudNarration([string]$ApiKey, [string]$text, [string]$destination) {
+  $requestJson = @{
+    model           = $speechModel
+    input           = $text
+    voice           = $speechVoice
+    response_format = "mp3"
+  } | ConvertTo-Json -Compress
+
+  [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
+  Invoke-WebRequest -Method Post -Uri "https://openrouter.ai/api/v1/audio/speech" -Headers @{
+    Authorization  = "Bearer $ApiKey"
+    "HTTP-Referer" = "http://localhost:$Port"
+    "X-Title"      = "FlashRead"
+  } -ContentType "application/json; charset=utf-8" -Body ([System.Text.Encoding]::UTF8.GetBytes($requestJson)) -OutFile $destination -TimeoutSec 120 | Out-Null
 }
 
 function Write-NarrationWav([string]$text, [string]$destination) {
@@ -491,27 +510,42 @@ function Handle-Podcast($stream, [string]$body) {
 
   Remove-OldNarration
   $id = [guid]::NewGuid().ToString("n")
+  $mp3Path = Join-Path $narrationDir "$id.mp3"
   $wavPath = Join-Path $narrationDir "$id.wav"
+  $audioPath = $mp3Path
+  $audioUrl = "/narration/$id.mp3"
+  $voiceName = "elevenlabs-sarah"
   try {
-    Write-NarrationWav $script $wavPath
+    Write-CloudNarration $apiKey $script $mp3Path
   } catch {
-    Write-Host "Local narration failed."
-    if (Test-Path -LiteralPath $wavPath) {
-      Remove-Item -LiteralPath $wavPath -Force -ErrorAction SilentlyContinue
+    Write-Host "Cloud narration failed. Using the Windows voice."
+    if (Test-Path -LiteralPath $mp3Path) {
+      Remove-Item -LiteralPath $mp3Path -Force -ErrorAction SilentlyContinue
     }
-    Send-Json $stream "500 Internal Server Error" @{
-      error = "The script was written, but this computer could not create the audio file."
+    try {
+      Write-NarrationWav $script $wavPath
+      $audioPath = $wavPath
+      $audioUrl = "/narration/$id.wav"
+      $voiceName = "windows-local"
+    } catch {
+      Write-Host "Local narration failed."
+      if (Test-Path -LiteralPath $wavPath) {
+        Remove-Item -LiteralPath $wavPath -Force -ErrorAction SilentlyContinue
+      }
+      Send-Json $stream "500 Internal Server Error" @{
+        error = "The script was written, but this computer could not create the audio file."
+      }
+      return
     }
-    return
   }
 
   $audioBytes = 0
-  if (Test-Path -LiteralPath $wavPath) {
-    $audioBytes = (Get-Item -LiteralPath $wavPath).Length
+  if (Test-Path -LiteralPath $audioPath) {
+    $audioBytes = (Get-Item -LiteralPath $audioPath).Length
   }
   if ($audioBytes -lt 1000) {
-    if (Test-Path -LiteralPath $wavPath) {
-      Remove-Item -LiteralPath $wavPath -Force -ErrorAction SilentlyContinue
+    if (Test-Path -LiteralPath $audioPath) {
+      Remove-Item -LiteralPath $audioPath -Force -ErrorAction SilentlyContinue
     }
     Send-Json $stream "500 Internal Server Error" @{
       error = "This computer could not create a playable audio file."
@@ -519,15 +553,15 @@ function Handle-Podcast($stream, [string]$body) {
     return
   }
 
-  Write-Host "Narration audio ready. bytes=$audioBytes"
+  Write-Host "Narration audio ready. voice=$voiceName bytes=$audioBytes"
   Send-Json $stream "200 OK" @{
-    audio_url         = "/narration/$id.wav"
+    audio_url         = $audioUrl
     model             = $summaryModel
     characters_sent   = $text.Length
     script_characters = $script.Length
     audio_bytes       = $audioBytes
     truncated         = $truncated
-    voice             = "windows-local"
+    voice             = $voiceName
   }
 }
 

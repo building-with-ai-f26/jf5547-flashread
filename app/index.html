@@ -215,7 +215,7 @@
     }
 
     .primary { background: var(--accent); color: #f4fbf8; border-color: var(--accent); }
-    .quiet { background: transparent; border-color: var(--line); }
+    .quiet { background: rgba(255, 252, 247, 0.72); border-color: rgba(28, 25, 21, 0.12); color: var(--ink); }
 
     .choices {
       display: flex;
@@ -254,32 +254,49 @@
       justify-content: space-between;
       gap: 16px;
       align-items: center;
-      margin-bottom: 22px;
+      margin-bottom: 18px;
     }
 
     .modes { display: flex; flex-wrap: wrap; gap: 8px; }
     .modes button, #go-home {
       border-radius: 999px;
-      border: 1px solid var(--line);
-      background: rgba(255, 252, 247, 0.7);
-      padding: 8px 12px;
+      border: 1px solid rgba(255, 255, 255, 0.34);
+      background: rgba(255, 252, 247, 0.14);
+      color: #fff;
+      backdrop-filter: blur(14px);
+      padding: 8px 14px;
+      transition: background 0.18s ease, transform 0.18s ease, border-color 0.18s ease;
     }
+    .modes button:hover, #go-home:hover {
+      background: rgba(255, 252, 247, 0.24);
+    }
+    .modes button:active, #go-home:active { transform: scale(0.97); }
     .modes button[aria-pressed="true"] {
-      background: var(--accent-soft);
-      border-color: rgba(29, 107, 87, 0.45);
-      color: var(--accent);
+      background: rgba(255, 252, 247, 0.94);
+      border-color: transparent;
+      color: #1c1915;
     }
 
     .panel {
-      background: rgba(255, 252, 247, 0.78);
-      border: 1px solid var(--line);
-      border-radius: 24px;
-      padding: 22px 22px 18px;
-      box-shadow: 0 18px 50px rgba(48, 36, 18, 0.05);
+      background: rgba(255, 252, 247, 0.9);
+      backdrop-filter: blur(18px);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      border-radius: 28px;
+      padding: 28px 26px 22px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.2);
     }
 
-    .kicker { margin: 0; color: var(--accent); font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; }
-    h2.view-title { margin: 6px 0 0; font-family: Georgia, "Palatino Linotype", serif; font-weight: 500; font-size: 32px; }
+    .kicker { margin: 0; color: var(--accent); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; }
+    h2.view-title { margin: 8px 0 0; font-family: Georgia, "Palatino Linotype", serif; font-weight: 500; font-size: 34px; letter-spacing: -0.03em; }
+    .note { max-width: 62ch; }
+
+    @keyframes arrive {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: none; }
+    }
+
+    .arrive { animation: arrive 0.46s cubic-bezier(0.16, 0.84, 0.32, 1) both; }
+    .dummy-sheet.arrive { animation-delay: 0.08s; }
 
     .stage {
       position: relative;
@@ -428,24 +445,34 @@
     audio { width: min(100%, 520px); margin: 12px 0; }
     .replay-bar {
       position: fixed;
-      left: 20px;
-      right: 20px;
+      left: 50%;
+      right: auto;
       bottom: 14px;
       z-index: 3;
+      width: min(760px, calc(100% - 32px));
+      transform: translateX(-50%);
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
       align-items: center;
-      padding: 12px 14px;
-      border: 1px solid var(--line);
+      padding: 8px 10px 8px 14px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
       border-radius: 14px;
-      background: rgba(255, 252, 247, 0.94);
-      color: var(--muted);
-      font-size: 14px;
-      box-shadow: 0 10px 30px rgba(48, 36, 18, 0.08);
+      background: rgba(18, 14, 10, 0.42);
+      color: rgba(255, 248, 240, 0.84);
+      font-size: 13px;
+      box-shadow: none;
+      backdrop-filter: blur(16px);
     }
     .replay-bar p { margin: 0; flex: 1 1 240px; }
-    .fine { margin: 18px 0 0; color: rgba(255, 248, 240, 0.78); font-size: 13px; text-align: center; text-shadow: 0 6px 18px rgba(0, 0, 0, 0.35); }
+    .replay-bar button {
+      border: 0;
+      border-radius: 999px;
+      background: rgba(255, 252, 247, 0.92);
+      color: #1c1915;
+      padding: 7px 12px;
+    }
+    .fine { display: none; }
 
     @media (max-width: 800px) {
       .sliders { grid-template-columns: 1fr; }
@@ -454,15 +481,16 @@
       .lede { font-size: 16px; margin-top: 10px; }
       .dropzone { margin-top: 16px; padding-left: 16px; }
       .shell { padding-top: 18px; padding-bottom: 150px; }
-      .replay-bar { left: 12px; right: 12px; bottom: 8px; }
+      .replay-bar { left: 12px; right: 12px; bottom: 8px; width: auto; transform: none; }
       .topbar { align-items: flex-start; flex-direction: column; }
       .read-stage, .read-stage.preview-off { grid-template-columns: 1fr; }
       .dummy-sheet { position: static; }
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .choice { transition: none; }
+      .choice, .modes button, #go-home { transition: none; }
       .choice:hover, .choice[aria-pressed="true"] { transform: none; }
+      .arrive { animation: none; }
     }
   </style>
 </head>
@@ -577,7 +605,7 @@
       <section id="view-podcast" class="panel" hidden>
         <p class="kicker">PDF to Podcast</p>
         <h2 class="view-title">Listen to the document</h2>
-        <p class="note">Generate Podcast sends the extracted text to OpenRouter to write a script. This computer then saves a WAV file with the Windows voice. That voice is local narration, not a cloud podcast studio. Nothing is sent until you click.</p>
+        <p class="note">Generate Podcast sends the extracted text to OpenRouter to write a script, then speaks it with a natural narration voice. If that voice is unavailable, this computer uses the Windows voice instead. Nothing is sent until you click.</p>
         <div class="row">
           <button id="make-podcast" class="primary" type="button">Generate Podcast</button>
           <button id="quiz-from-podcast" class="quiet" type="button">Test My Understanding</button>
@@ -788,6 +816,32 @@
       if (name !== "read") pause();
       if (name !== "podcast" && player && !player.paused) player.pause();
       paintModes();
+      arrive(name);
+    }
+
+    function arrive(name) {
+      var targets = [];
+      if (name === "read") {
+        targets.push(viewRead.querySelector(".panel"));
+        targets.push(pagePreviewWrap);
+      } else if (name === "summary") {
+        targets.push(viewSummary);
+      } else if (name === "podcast") {
+        targets.push(viewPodcast);
+      } else if (name === "quiz") {
+        targets.push(viewQuiz);
+      } else {
+        return;
+      }
+      var bar = document.querySelector(".topbar");
+      if (bar) targets.unshift(bar);
+      for (var i = 0; i < targets.length; i++) {
+        var node = targets[i];
+        if (!node) continue;
+        node.classList.remove("arrive");
+        void node.offsetWidth;
+        node.classList.add("arrive");
+      }
     }
 
     function orpIndex(word) {
@@ -1273,7 +1327,11 @@
           return;
         }
         player.src = result.data.audio_url;
-        podcastStatus.textContent = "Narration ready. The script came from the AI model. The voice is Windows text-to-speech on this computer, saved as an audio file.";
+        if (result.data.voice === "windows-local") {
+          podcastStatus.textContent = "Narration ready. The script came from the AI model. The natural voice was unavailable, so this file uses the Windows voice on this computer.";
+        } else {
+          podcastStatus.textContent = "Narration ready. The script came from the AI model. The voice is a natural spoken narration, saved as an audio file.";
+        }
         if (result.data.truncated || packed.truncated) {
           podcastStatus.textContent += " The audio covers the beginning of the document.";
         }
