@@ -18,7 +18,7 @@
       person_profiles: "identified_only",
       session_recording: {
         maskAllInputs: true,
-        maskTextSelector: "#word, #word *, #context, #context *, #summary, #summary-note, #quiz, #quiz *, #status, #home-status, #podcast-status, .ph-mask"
+        maskTextSelector: "#word, #word *, #context, #context *, #page-preview, #page-preview *, #summary, #summary-note, #quiz, #quiz *, #status, #home-status, #podcast-status, .ph-mask"
       },
       loaded: function (ph) {
         ph.register({ page_type: "local_app" });
@@ -62,18 +62,59 @@
       outline-offset: 3px;
     }
 
+    .backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+      background: #14120f;
+    }
+
+    .backdrop video,
+    .backdrop img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .backdrop::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at center, rgba(16, 14, 12, 0.28) 0%, rgba(16, 14, 12, 0.42) 58%, rgba(16, 14, 12, 0.62) 100%);
+    }
+
     .shell {
-      width: min(980px, calc(100% - 40px));
+      position: relative;
+      z-index: 1;
+      width: min(1080px, calc(100% - 40px));
       margin: 0 auto;
       padding: 36px 0 120px;
     }
 
     .home {
-      min-height: calc(100vh - 180px);
+      min-height: calc(100vh - 150px);
       display: flex;
       flex-direction: column;
       justify-content: center;
+      text-align: center;
     }
+
+    body.on-home {
+      color: #f6f3ee;
+    }
+
+    body.on-home .eyebrow { color: rgba(255, 248, 240, 0.86); }
+    body.on-home h1,
+    body.on-home .lede {
+      color: #f8f5f0;
+      text-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+    }
+
+    body.on-home .fine { color: rgba(255, 248, 240, 0.78); }
 
     .eyebrow {
       margin: 0;
@@ -102,24 +143,39 @@
     }
 
     .dropzone {
+      display: flex;
+      align-items: center;
+      gap: 14px;
       margin: 28px auto 0;
-      width: min(680px, 100%);
-      border: 1.5px dashed rgba(28, 25, 21, 0.24);
-      background: rgba(255, 252, 247, 0.72);
-      border-radius: 20px;
-      padding: 28px 22px 22px;
-      text-align: center;
+      width: min(720px, 100%);
+      border: 1px solid rgba(255, 255, 255, 0.38);
+      background: rgba(255, 252, 247, 0.16);
+      backdrop-filter: blur(18px);
+      border-radius: 999px;
+      padding: 10px 10px 10px 22px;
+      text-align: left;
       cursor: pointer;
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.18);
     }
 
     .dropzone.drag, .dropzone:hover {
-      border-color: var(--accent);
-      background: rgba(232, 244, 239, 0.88);
+      border-color: rgba(255, 255, 255, 0.7);
+      background: rgba(255, 252, 247, 0.26);
     }
 
-    .dropzone.ready { border-style: solid; border-color: rgba(29, 107, 87, 0.45); }
-    .dropzone h2 { margin: 0; font-size: 22px; font-weight: 600; }
-    #home-status { margin: 8px 0 0; color: var(--muted); }
+    .dropzone.ready { border-color: rgba(255, 255, 255, 0.85); }
+    .search-copy { flex: 1; min-width: 0; }
+    .dropzone h2 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: #fff;
+    }
+    #home-status {
+      margin: 2px 0 0;
+      color: rgba(255, 248, 240, 0.78);
+      font-size: 13px;
+    }
 
     .text-btn, .primary, .quiet {
       border-radius: 999px;
@@ -128,9 +184,10 @@
     }
 
     .text-btn {
-      margin-top: 14px;
-      background: var(--ink);
-      color: #f7f4ee;
+      margin: 0;
+      background: rgba(255, 252, 247, 0.92);
+      color: #1c1915;
+      flex: 0 0 auto;
     }
 
     .primary { background: var(--accent); color: #f4fbf8; border-color: var(--accent); }
@@ -148,24 +205,27 @@
       display: flex;
       flex-direction: column;
       gap: 8px;
-      min-height: 180px;
+      min-height: 148px;
       padding: 18px 16px;
       border-radius: 18px;
-      border: 1px solid var(--line);
-      background: var(--card);
-      box-shadow: 0 16px 40px rgba(48, 36, 18, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      background: rgba(255, 252, 247, 0.14);
+      color: #fff;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
       text-align: left;
-      transition: border-color 0.16s ease, transform 0.16s ease;
+      transition: border-color 0.16s ease, transform 0.16s ease, background 0.16s ease;
     }
 
     .choice:hover, .choice[aria-pressed="true"] {
-      border-color: rgba(29, 107, 87, 0.75);
+      border-color: rgba(255, 255, 255, 0.85);
+      background: rgba(255, 252, 247, 0.24);
       transform: translateY(-2px);
     }
 
-    .choice svg { width: 28px; height: 28px; stroke: var(--accent); fill: none; stroke-width: 1.7; }
+    .choice svg { width: 28px; height: 28px; stroke: #fff; fill: none; stroke-width: 1.7; }
     .choice strong { font-size: 18px; }
-    .choice span { color: var(--muted); line-height: 1.4; }
+    .choice span { color: rgba(255, 248, 240, 0.82); line-height: 1.4; }
 
     .topbar {
       display: flex;
@@ -248,6 +308,58 @@
     .sliders label, .check { color: var(--muted); font-size: 14px; }
     .hint { margin: 8px 0 0; color: var(--muted); font-size: 13px; }
 
+    .read-stage {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 210px;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .read-stage.preview-off { grid-template-columns: minmax(0, 1fr); }
+
+    .dummy-sheet { position: sticky; top: 16px; }
+
+    .dummy-page {
+      height: 292px;
+      display: flex;
+      flex-direction: column;
+      padding: 16px 14px 14px;
+      border-radius: 2px 10px 10px 2px;
+      background:
+        linear-gradient(90deg, rgba(90, 70, 40, 0.08), transparent 10px),
+        #f7f3ea;
+      color: #2c2822;
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.7) inset,
+        0 18px 36px rgba(0, 0, 0, 0.28);
+      overflow: hidden;
+    }
+
+    .dummy-label {
+      margin: 0 0 8px;
+      text-align: center;
+      font-size: 8px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: #8d8478;
+    }
+
+    .dummy-body {
+      position: relative;
+      flex: 1;
+      overflow: auto;
+      font-family: Georgia, "Palatino Linotype", serif;
+      font-size: 6.5px;
+      line-height: 1.35;
+      text-align: justify;
+    }
+
+    .dummy-body .current {
+      background: #f3d7a1;
+      color: #1c1915;
+      border-radius: 1px;
+    }
+
     .context-wrap { margin-top: 16px; }
     .context {
       position: relative;
@@ -311,12 +423,20 @@
       box-shadow: 0 10px 30px rgba(48, 36, 18, 0.08);
     }
     .replay-bar p { margin: 0; flex: 1 1 240px; }
-    .fine { margin: 18px 0 0; color: var(--muted); font-size: 13px; text-align: center; }
+    .fine { margin: 18px 0 0; color: rgba(255, 248, 240, 0.78); font-size: 13px; text-align: center; text-shadow: 0 6px 18px rgba(0, 0, 0, 0.35); }
 
     @media (max-width: 800px) {
       .choices, .sliders { grid-template-columns: 1fr; }
-      .home { min-height: auto; padding-top: 24px; }
+      .home { min-height: auto; justify-content: flex-start; padding-top: 4px; }
+      .choice { min-height: 0; padding: 12px 14px; gap: 4px; }
+      .choices { gap: 8px; margin-top: 12px; }
+      .lede { font-size: 16px; margin-top: 10px; }
+      .dropzone { margin-top: 16px; padding-left: 16px; }
+      .shell { padding-top: 18px; padding-bottom: 150px; }
+      .replay-bar { left: 12px; right: 12px; bottom: 8px; }
       .topbar { align-items: flex-start; flex-direction: column; }
+      .read-stage, .read-stage.preview-off { grid-template-columns: 1fr; }
+      .dummy-sheet { position: static; }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -325,15 +445,23 @@
     }
   </style>
 </head>
-<body>
+<body class="on-home">
+  <div class="backdrop" aria-hidden="true">
+    <video id="bg-video" autoplay muted loop playsinline preload="auto">
+      <source src="media/home.mp4" type="video/mp4" />
+    </video>
+    <img id="bg-still" alt="" hidden />
+  </div>
   <div class="shell">
     <section id="view-home" class="home">
       <p class="eyebrow">FlashRead</p>
       <h1>What do you want to do?</h1>
       <p class="lede">Upload a text-based PDF, then choose how to learn it. The file stays on this computer until you ask for an AI action.</p>
       <div id="dropzone" class="dropzone" tabindex="0">
-        <h2 id="drop-title">Drop a text-based PDF here</h2>
-        <p id="home-status" class="ph-mask">or browse from this computer</p>
+        <div class="search-copy">
+          <h2 id="drop-title">Drop a text-based PDF</h2>
+          <p id="home-status" class="ph-mask">or browse from this computer</p>
+        </div>
         <button id="browse" class="text-btn" type="button">Browse</button>
         <input id="pdf-input" type="file" accept="application/pdf,.pdf" hidden />
       </div>
@@ -366,7 +494,8 @@
         </nav>
       </div>
 
-      <section id="view-read" class="panel" hidden>
+      <section id="view-read" class="read-stage" hidden>
+        <div class="panel">
         <p id="reader-kicker" class="kicker">Reading the document</p>
         <div class="stage" aria-hidden="false">
           <p id="word" class="wordline ph-mask">
@@ -387,6 +516,7 @@
           <button id="pause" class="quiet" type="button">Pause</button>
           <button id="rewind" class="quiet" type="button">Rewind 10 words</button>
           <button id="quiz-from-read" class="quiet" type="button">Test My Understanding</button>
+          <button id="toggle-preview" class="quiet" type="button">Hide page</button>
         </div>
         <div class="sliders">
           <label>Speed <span id="speed-value">300</span> wpm
@@ -403,6 +533,13 @@
           <div id="context" class="context ph-mask"></div>
         </div>
         <p class="hint">Space plays or pauses. Left arrow rewinds 10 words. Right arrow moves forward 10 words.</p>
+        </div>
+        <aside id="page-preview-wrap" class="dummy-sheet">
+          <div id="page-preview" class="dummy-page ph-mask" aria-label="Page preview">
+            <p id="dummy-label" class="dummy-label">Page</p>
+            <div id="dummy-body" class="dummy-body"></div>
+          </div>
+        </aside>
       </section>
 
       <section id="view-summary" class="panel" hidden>
@@ -501,6 +638,11 @@
     var readerKicker = document.querySelector("#reader-kicker");
     var contextEl = document.querySelector("#context");
     var toggleContext = document.querySelector("#toggle-context");
+    var togglePreview = document.querySelector("#toggle-preview");
+    var readStage = document.querySelector("#view-read");
+    var pagePreviewWrap = document.querySelector("#page-preview-wrap");
+    var dummyLabel = document.querySelector("#dummy-label");
+    var dummyBody = document.querySelector("#dummy-body");
     var summarizeBtn = document.querySelector("#summarize");
     var speedSummaryBtn = document.querySelector("#speed-summary");
     var summaryEl = document.querySelector("#summary");
@@ -530,7 +672,17 @@
     var reader = { tokens: [], index: 0, playing: false, timer: null };
     var scrubbing = false;
     var contextVisible = true;
+    var previewVisible = true;
+    var previewTokens = null;
+    var previewPageKey = "";
+    var previewNodes = [];
+    var previewCurrent = null;
     var busy = { summary: false, podcast: false, quiz: false };
+    var publicDemo = /github\.io$/i.test(location.hostname);
+
+    function publicAiNote() {
+      return "Speed reading works on this public page. Summary, podcast, and quiz run in the local app, which needs an OpenRouter key.";
+    }
     var quiz = null;
     var choiceButtons = document.querySelectorAll(".choice");
     var modeButtons = document.querySelectorAll(".modes button");
@@ -566,6 +718,45 @@
       }
     }
 
+    var bgVideo = document.querySelector("#bg-video");
+    var bgStill = document.querySelector("#bg-still");
+    var posterUrl = "";
+
+    function captureFrame() {
+      if (!bgVideo || bgVideo.readyState < 2 || !bgVideo.videoWidth) return "";
+      var canvas = document.createElement("canvas");
+      canvas.width = bgVideo.videoWidth;
+      canvas.height = bgVideo.videoHeight;
+      canvas.getContext("2d").drawImage(bgVideo, 0, 0, canvas.width, canvas.height);
+      return canvas.toDataURL("image/jpeg", 0.86);
+    }
+
+    function setBackdrop(useStill) {
+      if (!bgVideo || !bgStill) return;
+      document.body.classList.toggle("on-home", !useStill);
+      if (useStill) {
+        var frame = captureFrame() || posterUrl;
+        if (frame) bgStill.src = frame;
+        bgVideo.pause();
+        bgStill.hidden = false;
+        bgVideo.hidden = true;
+      } else {
+        bgStill.hidden = true;
+        bgVideo.hidden = false;
+        if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+          var playing = bgVideo.play();
+          if (playing && playing.catch) playing.catch(function () {});
+        }
+      }
+    }
+
+    if (bgVideo) {
+      bgVideo.addEventListener("loadeddata", function () {
+        posterUrl = captureFrame();
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) setBackdrop(true);
+      });
+    }
+
     function showView(name) {
       currentMode = name;
       viewHome.hidden = name !== "home";
@@ -574,6 +765,7 @@
       viewSummary.hidden = name !== "summary";
       viewPodcast.hidden = name !== "podcast";
       viewQuiz.hidden = name !== "quiz";
+      setBackdrop(name !== "home");
       if (name !== "read") pause();
       if (name !== "podcast" && player && !player.paused) player.pause();
       paintModes();
@@ -659,6 +851,7 @@
       scrub.max = String(Math.max(tokens.length - 1, 0));
       if (!scrubbing) scrub.value = String(reader.index);
       renderContext();
+      renderPreview();
       refreshControls();
       if (activeSource === "document") writeSavedPlace();
     }
@@ -695,6 +888,55 @@
           index: places.document || 0
         }));
       } catch (err) {}
+    }
+
+    function previewKey(index) {
+      var token = reader.tokens[index];
+      if (!token || activeSource === "summary" || !token.page) return "all";
+      return String(token.page);
+    }
+
+    function buildDummyPage(key) {
+      dummyBody.textContent = "";
+      previewNodes = [];
+      previewCurrent = null;
+      if (key === "all") {
+        dummyLabel.textContent = activeSource === "summary" ? "Summary" : "Document";
+      } else {
+        dummyLabel.textContent = "Page " + key;
+      }
+      var frag = document.createDocumentFragment();
+      var tokens = reader.tokens;
+      for (var i = 0; i < tokens.length; i++) {
+        var page = tokens[i].page ? String(tokens[i].page) : "";
+        if (key !== "all" && page !== key) continue;
+        var span = document.createElement("span");
+        span.textContent = tokens[i].text + " ";
+        previewNodes[i] = span;
+        frag.appendChild(span);
+      }
+      dummyBody.appendChild(frag);
+    }
+
+    function renderPreview() {
+      if (!previewVisible || !reader.tokens.length) return;
+      var key = previewKey(reader.index);
+      if (reader.tokens !== previewTokens || key !== previewPageKey) {
+        previewTokens = reader.tokens;
+        previewPageKey = key;
+        buildDummyPage(key);
+      }
+      var current = previewNodes[reader.index];
+      if (!current) return;
+      if (previewCurrent) previewCurrent.classList.remove("current");
+      current.classList.add("current");
+      previewCurrent = current;
+      var top = current.offsetTop;
+      var viewTop = dummyBody.scrollTop;
+      var viewBottom = viewTop + dummyBody.clientHeight;
+      if (top < viewTop + 8 || top > viewBottom - 16) {
+        dummyBody.scrollTop = Math.max(0, top - dummyBody.clientHeight * 0.35);
+      }
     }
 
     function refreshControls() {
@@ -956,6 +1198,10 @@
 
     function generateSummary() {
       if (busy.summary || !doc.tokens.length) return;
+      if (publicDemo) {
+        summaryEl.textContent = publicAiNote();
+        return;
+      }
       busy.summary = true;
       summarizeBtn.disabled = true;
       summaryEl.textContent = "Generating summary…";
@@ -994,6 +1240,10 @@
 
     function generatePodcast() {
       if (busy.podcast || !doc.tokens.length) return;
+      if (publicDemo) {
+        podcastStatus.textContent = publicAiNote();
+        return;
+      }
       busy.podcast = true;
       podcastBtn.disabled = true;
       podcastStatus.textContent = "Writing the narration and creating an audio file on this computer. This can take a little while.";
@@ -1101,6 +1351,11 @@
 
     function generateQuiz() {
       if (busy.quiz || !doc.tokens.length) return;
+      if (publicDemo) {
+        showView("quiz");
+        quizProgress.textContent = publicAiNote();
+        return;
+      }
       busy.quiz = true;
       clearQuizView();
       quizProgress.textContent = "Writing questions from the document…";
@@ -1254,6 +1509,13 @@
       contextVisible = !contextVisible;
       contextEl.hidden = !contextVisible;
       toggleContext.textContent = contextVisible ? "Hide surrounding text" : "Show surrounding text";
+    });
+    togglePreview.addEventListener("click", function () {
+      previewVisible = !previewVisible;
+      pagePreviewWrap.hidden = !previewVisible;
+      readStage.classList.toggle("preview-off", !previewVisible);
+      togglePreview.textContent = previewVisible ? "Hide page" : "Show page";
+      if (previewVisible && reader.tokens.length) renderPreview();
     });
 
     document.addEventListener("keydown", function (event) {

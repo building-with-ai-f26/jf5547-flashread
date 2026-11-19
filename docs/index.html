@@ -197,7 +197,7 @@
       <h1>FlashRead</h1>
       <p class="tagline">Upload a text-based PDF, then speed-read it, summarize it, or listen to a short narration. An optional quiz checks the original document.</p>
       <div class="cta-row">
-        <a class="btn" id="try-product" href="#live-demo">See the Product →</a>
+        <a class="btn" id="try-product" href="demo/">See the Product →</a>
         <a class="btn btn-secondary" href="#prd">Read the Living PRD</a>
         <a class="btn btn-secondary" href="#build-log">Weekly Build Log</a>
       </div>
@@ -207,13 +207,13 @@
     <section id="live-demo">
       <h2>Product Showcase (Prototype / Live App / 2-Min Video)</h2>
       <p>
-        <strong>Current Status:</strong> Build 3 local app. It runs on a Windows laptop at <code>http://localhost:8000</code>. It is not publicly hosted.<br />
+        <strong>Current Status:</strong> Speed Read is public at <a href="demo/">the demo</a>. Summary, podcast, and quiz still run on a Windows laptop at <code>http://localhost:8000</code>.<br />
         <strong>Repository:</strong> <a href="https://github.com/building-with-ai-f26/jf5547-flashread">github.com/building-with-ai-f26/jf5547-flashread</a><br />
         <strong>Product Page:</strong> <a href="https://building-with-ai-f26.github.io/jf5547-flashread/">building-with-ai-f26.github.io/jf5547-flashread</a><br />
         <strong>How to run:</strong> from the repo folder, <code>powershell -ExecutionPolicy Bypass -File app\serve.ps1</code>, then open <code>http://localhost:8000</code>.
       </p>
       <p>
-        <strong>What works now:</strong> upload a text-based PDF and choose Speed Read, Summarize, or Podcast without uploading again. Speed Read plays, pauses, rewinds 10 words, scrubs, and sets speed from 150 to 600 WPM. It shows percent complete, word position, PDF page, time left, a focal letter, and the surrounding text with the current word highlighted. Uploading the same PDF again in this browser restores the last word. The saved value is a position number, not the document text. Summarize, Podcast, and Test My Understanding call the local server, which calls OpenRouter only when <code>OPENROUTER_API_KEY</code> is in <code>.env</code>. Without that key, those buttons explain how to add it and do not invent a summary, quiz, or audio file. Podcast audio, once a script comes back, is a WAV from the Windows voice on this computer, not a cloud studio voice. A live model reply was not produced in this build because this machine has no <code>.env</code> key. The live cloud URL and two-minute video come in Build 5.
+        <strong>What works now:</strong> upload a text-based PDF and choose Speed Read, Summarize, or Podcast without uploading again. Speed Read plays, pauses, rewinds 10 words, scrubs, and sets speed from 150 to 600 WPM. It shows percent complete, word position, PDF page, time left, a focal letter, and the surrounding text with the current word highlighted. Uploading the same PDF again in this browser restores the last word. The saved value is a position number, not the document text. Summarize, Podcast, and Test My Understanding call the local server, which calls OpenRouter only when <code>OPENROUTER_API_KEY</code> is in <code>.env</code>. Without that key, those buttons explain how to add it and do not invent a summary, quiz, or audio file. Podcast audio, once a script comes back, is a WAV from the Windows voice on this computer, not a cloud studio voice. A live model reply was not produced in this build because this machine has no <code>.env</code> key. Speed reading is available from See the Product. Summary, podcast, and quiz stay on the local server. The two-minute video comes in Build 5.
       </p>
       <img class="screenshot" src="assets/flashread-build3.png" alt="FlashRead reader paused on the word surrounding, with the letter r highlighted, at 32 percent, word 25 of 79, page 1 of 2, and the same word highlighted in the surrounding text." />
       <p class="meta">

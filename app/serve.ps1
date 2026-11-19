@@ -31,6 +31,8 @@ $types = @{
   ".css"  = "text/css"
   ".js"   = "text/javascript"
   ".png"  = "image/png"
+  ".jpg"  = "image/jpeg"
+  ".mp4"  = "video/mp4"
   ".wav"  = "audio/wav"
 }
 

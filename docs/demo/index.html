@@ -1,0 +1,1573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FlashRead</title>
+  <!-- PostHog web snippet. This is the public project token, not a personal API key. -->
+  <script>
+    !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],Object.defineProperty(u,"toString",{configurable:!0,enumerable:!0,writable:!0,value:function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e}}),Object.defineProperty(u.people,"toString",{configurable:!0,enumerable:!0,writable:!0,value:function(){return u.toString(1)+".people (stub)"}}),o="init capture register register_once register_for_session unregister unregister_for_session getFeatureFlag getFeatureFlagResult isFeatureEnabled reloadFeatureFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey getNextSurveyStep identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException loadToolbar get_property getSessionProperty createPersonProfile opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing clear_opt_in_out_capturing debug".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+    posthog.init("phc_kRaNWd2sA5tThvAbEowwwewF8c5kZvoCXU6MJ7TnrWyV", {
+      api_host: "https://us.i.posthog.com",
+      defaults: "2026-08-30",
+      capture_pageview: false,
+      autocapture: false,
+      capture_heatmaps: false,
+      capture_dead_clicks: false,
+      disable_session_recording: true,
+      person_profiles: "identified_only",
+      session_recording: {
+        maskAllInputs: true,
+        maskTextSelector: "#word, #word *, #context, #context *, #page-preview, #page-preview *, #summary, #summary-note, #quiz, #quiz *, #status, #home-status, #podcast-status, .ph-mask"
+      },
+      loaded: function (ph) {
+        ph.register({ page_type: "local_app" });
+        ph.capture("$pageview", { page_type: "local_app" });
+        if (window.flashreadReplaySync) window.flashreadReplaySync();
+      }
+    });
+  </script>
+  <style>
+    :root {
+      --ink: #1c1915;
+      --muted: #5e584e;
+      --line: rgba(28, 25, 21, 0.12);
+      --card: rgba(255, 252, 247, 0.9);
+      --accent: #1d6b57;
+      --accent-soft: rgba(29, 107, 87, 0.12);
+      --orp: #a33b32;
+      --mark: #f3d7a1;
+      --word-size: 64px;
+    }
+
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: "Segoe UI", Calibri, sans-serif;
+      background:
+        radial-gradient(1100px 520px at 8% -10%, rgba(255, 236, 206, 0.95), transparent 58%),
+        radial-gradient(900px 480px at 110% 0%, rgba(186, 214, 206, 0.7), transparent 52%),
+        linear-gradient(180deg, #f7f3ec 0%, #eef2f4 100%);
+    }
+
+    button, input { font: inherit; color: inherit; }
+    button { cursor: pointer; }
+    button:disabled { cursor: not-allowed; opacity: 0.45; }
+    button:focus-visible, input:focus-visible, .dropzone:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 3px;
+    }
+
+    .backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+      background: #14120f;
+    }
+
+    .backdrop video,
+    .backdrop img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .backdrop::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at center, rgba(16, 14, 12, 0.28) 0%, rgba(16, 14, 12, 0.42) 58%, rgba(16, 14, 12, 0.62) 100%);
+    }
+
+    .shell {
+      position: relative;
+      z-index: 1;
+      width: min(1080px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 36px 0 120px;
+    }
+
+    .home {
+      min-height: calc(100vh - 150px);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      text-align: center;
+    }
+
+    body.on-home {
+      color: #f6f3ee;
+    }
+
+    body.on-home .eyebrow { color: rgba(255, 248, 240, 0.86); }
+    body.on-home h1,
+    body.on-home .lede {
+      color: #f8f5f0;
+      text-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+    }
+
+    body.on-home .fine { color: rgba(255, 248, 240, 0.78); }
+
+    .eyebrow {
+      margin: 0;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      font-size: 12px;
+      color: var(--accent);
+      font-weight: 650;
+    }
+
+    h1 {
+      margin: 10px 0 0;
+      font-family: Georgia, "Palatino Linotype", serif;
+      font-size: clamp(40px, 6vw, 68px);
+      font-weight: 500;
+      letter-spacing: -0.03em;
+      line-height: 1.02;
+    }
+
+    .lede {
+      margin: 14px auto 0;
+      max-width: 560px;
+      color: var(--muted);
+      font-size: 18px;
+      line-height: 1.5;
+    }
+
+    .dropzone {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin: 28px auto 0;
+      width: min(720px, 100%);
+      border: 1px solid rgba(255, 255, 255, 0.38);
+      background: rgba(255, 252, 247, 0.16);
+      backdrop-filter: blur(18px);
+      border-radius: 999px;
+      padding: 10px 10px 10px 22px;
+      text-align: left;
+      cursor: pointer;
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.18);
+    }
+
+    .dropzone.drag, .dropzone:hover {
+      border-color: rgba(255, 255, 255, 0.7);
+      background: rgba(255, 252, 247, 0.26);
+    }
+
+    .dropzone.ready { border-color: rgba(255, 255, 255, 0.85); }
+    .search-copy { flex: 1; min-width: 0; }
+    .dropzone h2 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: #fff;
+    }
+    #home-status {
+      margin: 2px 0 0;
+      color: rgba(255, 248, 240, 0.78);
+      font-size: 13px;
+    }
+
+    .text-btn, .primary, .quiet {
+      border-radius: 999px;
+      border: 1px solid transparent;
+      padding: 10px 16px;
+    }
+
+    .text-btn {
+      margin: 0;
+      background: rgba(255, 252, 247, 0.92);
+      color: #1c1915;
+      flex: 0 0 auto;
+    }
+
+    .primary { background: var(--accent); color: #f4fbf8; border-color: var(--accent); }
+    .quiet { background: transparent; border-color: var(--line); }
+
+    .choices {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-top: 22px;
+      text-align: left;
+    }
+
+    .choice {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-height: 148px;
+      padding: 18px 16px;
+      border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      background: rgba(255, 252, 247, 0.14);
+      color: #fff;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
+      text-align: left;
+      transition: border-color 0.16s ease, transform 0.16s ease, background 0.16s ease;
+    }
+
+    .choice:hover, .choice[aria-pressed="true"] {
+      border-color: rgba(255, 255, 255, 0.85);
+      background: rgba(255, 252, 247, 0.24);
+      transform: translateY(-2px);
+    }
+
+    .choice svg { width: 28px; height: 28px; stroke: #fff; fill: none; stroke-width: 1.7; }
+    .choice strong { font-size: 18px; }
+    .choice span { color: rgba(255, 248, 240, 0.82); line-height: 1.4; }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 22px;
+    }
+
+    .modes { display: flex; flex-wrap: wrap; gap: 8px; }
+    .modes button, #go-home {
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255, 252, 247, 0.7);
+      padding: 8px 12px;
+    }
+    .modes button[aria-pressed="true"] {
+      background: var(--accent-soft);
+      border-color: rgba(29, 107, 87, 0.45);
+      color: var(--accent);
+    }
+
+    .panel {
+      background: rgba(255, 252, 247, 0.78);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      padding: 22px 22px 18px;
+      box-shadow: 0 18px 50px rgba(48, 36, 18, 0.05);
+    }
+
+    .kicker { margin: 0; color: var(--accent); font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; }
+    h2.view-title { margin: 6px 0 0; font-family: Georgia, "Palatino Linotype", serif; font-weight: 500; font-size: 32px; }
+
+    .stage {
+      position: relative;
+      min-height: 168px;
+      display: flex;
+      align-items: center;
+      margin: 8px 0 4px;
+    }
+
+    .stage::before {
+      content: "";
+      position: absolute;
+      top: 18px;
+      left: 50%;
+      width: 2px;
+      height: 16px;
+      transform: translateX(-50%);
+      background: var(--orp);
+      border-radius: 2px;
+    }
+
+    .wordline {
+      display: flex;
+      width: 100%;
+      align-items: baseline;
+      font-family: Georgia, "Palatino Linotype", serif;
+      font-size: var(--word-size);
+      line-height: 1;
+      letter-spacing: -0.03em;
+    }
+
+    .wordline .pre, .wordline .post { flex: 1 1 0; white-space: pre; }
+    .wordline .pre { text-align: right; }
+    .wordline .post { text-align: left; }
+    .wordline .orp { color: var(--orp); }
+
+    .stats, .sliders, .controls, .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 16px;
+      align-items: center;
+    }
+
+    .stats { color: var(--muted); font-size: 14px; margin: 4px 0 10px; }
+    .meter { margin: 0 0 12px; }
+    .meter input, .sliders input[type="range"] { width: 100%; accent-color: var(--accent); }
+    .sliders { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 22px; margin: 12px 0; }
+    .sliders label, .check { color: var(--muted); font-size: 14px; }
+    .hint { margin: 8px 0 0; color: var(--muted); font-size: 13px; }
+
+    .read-stage {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 210px;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .read-stage.preview-off { grid-template-columns: minmax(0, 1fr); }
+
+    .dummy-sheet { position: sticky; top: 16px; }
+
+    .dummy-page {
+      height: 292px;
+      display: flex;
+      flex-direction: column;
+      padding: 16px 14px 14px;
+      border-radius: 2px 10px 10px 2px;
+      background:
+        linear-gradient(90deg, rgba(90, 70, 40, 0.08), transparent 10px),
+        #f7f3ea;
+      color: #2c2822;
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.7) inset,
+        0 18px 36px rgba(0, 0, 0, 0.28);
+      overflow: hidden;
+    }
+
+    .dummy-label {
+      margin: 0 0 8px;
+      text-align: center;
+      font-size: 8px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: #8d8478;
+    }
+
+    .dummy-body {
+      position: relative;
+      flex: 1;
+      overflow: auto;
+      font-family: Georgia, "Palatino Linotype", serif;
+      font-size: 6.5px;
+      line-height: 1.35;
+      text-align: justify;
+    }
+
+    .dummy-body .current {
+      background: #f3d7a1;
+      color: #1c1915;
+      border-radius: 1px;
+    }
+
+    .context-wrap { margin-top: 16px; }
+    .context {
+      position: relative;
+      max-height: 148px;
+      overflow: auto;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(255, 252, 247, 0.9);
+      border: 1px solid var(--line);
+      color: #4a453c;
+      line-height: 1.55;
+    }
+    .context .current { background: var(--mark); color: var(--ink); border-radius: 4px; }
+    .context .page-mark {
+      display: inline-block;
+      margin: 0 6px 0 2px;
+      color: var(--accent);
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .note { color: var(--muted); font-size: 14px; line-height: 1.45; }
+    #summary, #quiz-explain, .quiz-q {
+      white-space: pre-wrap;
+      line-height: 1.5;
+    }
+    #summary { font-size: 17px; }
+
+    .quiz-choice, .rate {
+      display: block;
+      width: 100%;
+      text-align: left;
+      margin-top: 8px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: #fffdf9;
+    }
+    .quiz-choice.right { border-color: var(--accent); background: var(--accent-soft); }
+    .quiz-choice.wrong { border-color: #a33b32; background: rgba(163, 59, 50, 0.08); }
+    .rate { width: auto; display: inline-block; margin-right: 8px; }
+
+    audio { width: min(100%, 520px); margin: 12px 0; }
+    .replay-bar {
+      position: fixed;
+      left: 20px;
+      right: 20px;
+      bottom: 14px;
+      z-index: 3;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(255, 252, 247, 0.94);
+      color: var(--muted);
+      font-size: 14px;
+      box-shadow: 0 10px 30px rgba(48, 36, 18, 0.08);
+    }
+    .replay-bar p { margin: 0; flex: 1 1 240px; }
+    .fine { margin: 18px 0 0; color: rgba(255, 248, 240, 0.78); font-size: 13px; text-align: center; text-shadow: 0 6px 18px rgba(0, 0, 0, 0.35); }
+
+    @media (max-width: 800px) {
+      .choices, .sliders { grid-template-columns: 1fr; }
+      .home { min-height: auto; justify-content: flex-start; padding-top: 4px; }
+      .choice { min-height: 0; padding: 12px 14px; gap: 4px; }
+      .choices { gap: 8px; margin-top: 12px; }
+      .lede { font-size: 16px; margin-top: 10px; }
+      .dropzone { margin-top: 16px; padding-left: 16px; }
+      .shell { padding-top: 18px; padding-bottom: 150px; }
+      .replay-bar { left: 12px; right: 12px; bottom: 8px; }
+      .topbar { align-items: flex-start; flex-direction: column; }
+      .read-stage, .read-stage.preview-off { grid-template-columns: 1fr; }
+      .dummy-sheet { position: static; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .choice { transition: none; }
+      .choice:hover, .choice[aria-pressed="true"] { transform: none; }
+    }
+  </style>
+</head>
+<body class="on-home">
+  <div class="backdrop" aria-hidden="true">
+    <video id="bg-video" autoplay muted loop playsinline preload="auto">
+      <source src="media/home.mp4" type="video/mp4" />
+    </video>
+    <img id="bg-still" alt="" hidden />
+  </div>
+  <div class="shell">
+    <section id="view-home" class="home">
+      <p class="eyebrow">FlashRead</p>
+      <h1>What do you want to do?</h1>
+      <p class="lede">Upload a text-based PDF, then choose how to learn it. The file stays on this computer until you ask for an AI action.</p>
+      <div id="dropzone" class="dropzone" tabindex="0">
+        <div class="search-copy">
+          <h2 id="drop-title">Drop a text-based PDF</h2>
+          <p id="home-status" class="ph-mask">or browse from this computer</p>
+        </div>
+        <button id="browse" class="text-btn" type="button">Browse</button>
+        <input id="pdf-input" type="file" accept="application/pdf,.pdf" hidden />
+      </div>
+      <div class="choices">
+        <button class="choice" type="button" data-mode="read">
+          <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M5 16h7M20 16h7"/><circle cx="16" cy="16" r="3.2"/></svg>
+          <strong>Speed Read PDF</strong>
+          <span>Read one word at a time, with your place and the surrounding text in view.</span>
+        </button>
+        <button class="choice" type="button" data-mode="summary">
+          <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M7 6h14l6 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"/><path d="M20 6v6h6M9 16h12M9 21h8"/></svg>
+          <strong>Summarize PDF</strong>
+          <span>Generate a short AI summary, then speed-read that summary.</span>
+        </button>
+        <button class="choice" type="button" data-mode="podcast">
+          <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 5a5 5 0 0 1 5 5v6a5 5 0 0 1-10 0v-6a5 5 0 0 1 5-5z"/><path d="M8 15a8 8 0 0 0 16 0M16 23v4M12 27h8"/></svg>
+          <strong>PDF to Podcast</strong>
+          <span>Turn the document into a short narration you can play.</span>
+        </button>
+      </div>
+    </section>
+
+    <div id="workspace" hidden>
+      <div class="topbar">
+        <button id="go-home" type="button">Home</button>
+        <nav class="modes" aria-label="Learning modes">
+          <button type="button" data-mode="read">Speed read</button>
+          <button type="button" data-mode="summary">Summary</button>
+          <button type="button" data-mode="podcast">Podcast</button>
+        </nav>
+      </div>
+
+      <section id="view-read" class="read-stage" hidden>
+        <div class="panel">
+        <p id="reader-kicker" class="kicker">Reading the document</p>
+        <div class="stage" aria-hidden="false">
+          <p id="word" class="wordline ph-mask">
+            <span id="word-pre" class="pre"></span><span id="word-orp" class="orp"></span><span id="word-post" class="post"></span>
+          </p>
+        </div>
+        <div class="meter">
+          <input id="scrub" type="range" min="0" max="0" value="0" aria-label="Reading position" />
+        </div>
+        <div class="stats">
+          <span id="stat-percent">0%</span>
+          <span id="stat-position"></span>
+          <span id="stat-page"></span>
+          <span id="stat-remaining"></span>
+        </div>
+        <div class="controls">
+          <button id="play" class="primary" type="button">Play</button>
+          <button id="pause" class="quiet" type="button">Pause</button>
+          <button id="rewind" class="quiet" type="button">Rewind 10 words</button>
+          <button id="quiz-from-read" class="quiet" type="button">Test My Understanding</button>
+          <button id="toggle-preview" class="quiet" type="button">Hide page</button>
+        </div>
+        <div class="sliders">
+          <label>Speed <span id="speed-value">300</span> wpm
+            <input id="speed" type="range" min="150" max="600" step="10" value="300" />
+          </label>
+          <label>Text size <span id="font-value">64</span>
+            <input id="font-size" type="range" min="36" max="96" step="2" value="64" />
+          </label>
+        </div>
+        <label class="check"><input id="sentence-pause" type="checkbox" /> Pause briefly at sentences</label>
+        <p id="status" class="hint ph-mask">Ready.</p>
+        <div class="context-wrap">
+          <button id="toggle-context" class="quiet" type="button">Hide surrounding text</button>
+          <div id="context" class="context ph-mask"></div>
+        </div>
+        <p class="hint">Space plays or pauses. Left arrow rewinds 10 words. Right arrow moves forward 10 words.</p>
+        </div>
+        <aside id="page-preview-wrap" class="dummy-sheet">
+          <div id="page-preview" class="dummy-page ph-mask" aria-label="Page preview">
+            <p id="dummy-label" class="dummy-label">Page</p>
+            <div id="dummy-body" class="dummy-body"></div>
+          </div>
+        </aside>
+      </section>
+
+      <section id="view-summary" class="panel" hidden>
+        <p class="kicker">Summarize PDF</p>
+        <h2 class="view-title">A shorter way through the reading</h2>
+        <p class="note">Generate Summary sends the extracted text to OpenRouter through this computer. Nothing is sent until you click. Do not send a document you are not allowed to share with that service. Long documents send the beginning only.</p>
+        <div class="row">
+          <button id="summarize" class="primary" type="button">Generate Summary</button>
+          <button id="speed-summary" class="quiet" type="button" disabled>Speed Read Summary</button>
+          <button id="quiz-from-summary" class="quiet" type="button">Test My Understanding</button>
+        </div>
+        <div id="summary" class="ph-mask"></div>
+        <p id="summary-note" class="note ph-mask"></p>
+      </section>
+
+      <section id="view-podcast" class="panel" hidden>
+        <p class="kicker">PDF to Podcast</p>
+        <h2 class="view-title">Listen to the document</h2>
+        <p class="note">Generate Podcast sends the extracted text to OpenRouter to write a script. This computer then saves a WAV file with the Windows voice. That voice is local narration, not a cloud podcast studio. Nothing is sent until you click.</p>
+        <div class="row">
+          <button id="make-podcast" class="primary" type="button">Generate Podcast</button>
+          <button id="quiz-from-podcast" class="quiet" type="button">Test My Understanding</button>
+        </div>
+        <p id="podcast-status" class="note ph-mask"></p>
+        <audio id="player" controls preload="metadata"></audio>
+        <div class="row" aria-label="Narration speed">
+          <button class="rate" type="button" data-rate="0.75">0.75×</button>
+          <button class="rate" type="button" data-rate="1">1×</button>
+          <button class="rate" type="button" data-rate="1.25">1.25×</button>
+          <button class="rate" type="button" data-rate="1.5">1.5×</button>
+        </div>
+      </section>
+
+      <section id="view-quiz" class="panel" hidden>
+        <p class="kicker">Comprehension</p>
+        <h2 class="view-title">Test My Understanding</h2>
+        <p class="note">Questions are written from the original PDF, not from the summary or the words already flashed. Generate sends that text to OpenRouter. Long documents send the beginning only.</p>
+        <div id="quiz" class="ph-mask">
+          <p id="quiz-progress" class="note"></p>
+          <p id="quiz-question" class="quiz-q"></p>
+          <div id="quiz-choices"></div>
+          <p id="quiz-explain"></p>
+          <p id="quiz-score"></p>
+        </div>
+        <div class="row">
+          <button id="quiz-next" class="primary" type="button" hidden>Next question</button>
+          <button id="quiz-retry" class="quiet" type="button" hidden>Try Again</button>
+          <button id="quiz-another" class="quiet" type="button" hidden>Generate Another Quiz</button>
+          <button id="quiz-back" class="quiet" type="button">Back</button>
+        </div>
+      </section>
+    </div>
+
+    <p class="fine">Playback counts go to PostHog. The PDF text, file name, summary, narration script, and quiz text do not. A scanned PDF has no extractable words.</p>
+    <div class="replay-bar" id="replay-bar">
+      <p id="replay-text">FlashRead can record this visit for product testing. Document text, summaries, and quizzes are masked. Recording stays off until you allow it.</p>
+      <button id="replay-allow" type="button">Allow recording</button>
+      <button id="replay-decline" type="button">Not now</button>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+    var TEXT_LIMIT = 48000;
+    var pdfInput = document.querySelector("#pdf-input");
+    var dropzone = document.querySelector("#dropzone");
+    var dropTitle = document.querySelector("#drop-title");
+    var homeStatus = document.querySelector("#home-status");
+    var browseBtn = document.querySelector("#browse");
+    var viewHome = document.querySelector("#view-home");
+    var workspace = document.querySelector("#workspace");
+    var viewRead = document.querySelector("#view-read");
+    var viewSummary = document.querySelector("#view-summary");
+    var viewPodcast = document.querySelector("#view-podcast");
+    var viewQuiz = document.querySelector("#view-quiz");
+    var wordPre = document.querySelector("#word-pre");
+    var wordOrp = document.querySelector("#word-orp");
+    var wordPost = document.querySelector("#word-post");
+    var scrub = document.querySelector("#scrub");
+    var statPercent = document.querySelector("#stat-percent");
+    var statPosition = document.querySelector("#stat-position");
+    var statPage = document.querySelector("#stat-page");
+    var statRemaining = document.querySelector("#stat-remaining");
+    var playBtn = document.querySelector("#play");
+    var pauseBtn = document.querySelector("#pause");
+    var rewindBtn = document.querySelector("#rewind");
+    var speedInput = document.querySelector("#speed");
+    var speedValue = document.querySelector("#speed-value");
+    var fontInput = document.querySelector("#font-size");
+    var fontValue = document.querySelector("#font-value");
+    var sentencePause = document.querySelector("#sentence-pause");
+    var statusEl = document.querySelector("#status");
+    var readerKicker = document.querySelector("#reader-kicker");
+    var contextEl = document.querySelector("#context");
+    var toggleContext = document.querySelector("#toggle-context");
+    var togglePreview = document.querySelector("#toggle-preview");
+    var readStage = document.querySelector("#view-read");
+    var pagePreviewWrap = document.querySelector("#page-preview-wrap");
+    var dummyLabel = document.querySelector("#dummy-label");
+    var dummyBody = document.querySelector("#dummy-body");
+    var summarizeBtn = document.querySelector("#summarize");
+    var speedSummaryBtn = document.querySelector("#speed-summary");
+    var summaryEl = document.querySelector("#summary");
+    var summaryNote = document.querySelector("#summary-note");
+    var podcastBtn = document.querySelector("#make-podcast");
+    var podcastStatus = document.querySelector("#podcast-status");
+    var player = document.querySelector("#player");
+    var quizProgress = document.querySelector("#quiz-progress");
+    var quizQuestion = document.querySelector("#quiz-question");
+    var quizChoices = document.querySelector("#quiz-choices");
+    var quizExplain = document.querySelector("#quiz-explain");
+    var quizScore = document.querySelector("#quiz-score");
+    var quizNext = document.querySelector("#quiz-next");
+    var quizRetry = document.querySelector("#quiz-retry");
+    var quizAnother = document.querySelector("#quiz-another");
+    var replayText = document.querySelector("#replay-text");
+    var replayAllow = document.querySelector("#replay-allow");
+    var replayDecline = document.querySelector("#replay-decline");
+
+    var doc = { tokens: [], pageCount: 0 };
+    var summaryTokens = [];
+    var places = { document: 0, summary: 0 };
+    var activeSource = "document";
+    var currentMode = "home";
+    var pendingMode = null;
+    var quizReturn = "read";
+    var reader = { tokens: [], index: 0, playing: false, timer: null };
+    var scrubbing = false;
+    var contextVisible = true;
+    var previewVisible = true;
+    var previewTokens = null;
+    var previewPageKey = "";
+    var previewNodes = [];
+    var previewCurrent = null;
+    var busy = { summary: false, podcast: false, quiz: false };
+    var publicDemo = /github\.io$/i.test(location.hostname);
+
+    function publicAiNote() {
+      return "Speed reading works on this public page. Summary, podcast, and quiz run in the local app, which needs an OpenRouter key.";
+    }
+    var quiz = null;
+    var choiceButtons = document.querySelectorAll(".choice");
+    var modeButtons = document.querySelectorAll(".modes button");
+
+    function track(name, props) {
+      if (!window.posthog) return;
+      var data = { page_type: "local_app" };
+      if (props) {
+        Object.keys(props).forEach(function (key) { data[key] = props[key]; });
+      }
+      posthog.capture(name, data);
+    }
+
+    function modeKey(mode) {
+      if (mode === "read") return "speed_read";
+      return mode;
+    }
+
+    function setHomeStatus(message) { homeStatus.textContent = message; }
+    function setStatus(message) { statusEl.textContent = message; }
+
+    function paintModes() {
+      var selected = currentMode;
+      if (currentMode === "quiz") selected = quizReturn;
+      if (currentMode === "read" && activeSource === "summary") selected = "summary";
+      for (var i = 0; i < choiceButtons.length; i++) {
+        var mode = choiceButtons[i].getAttribute("data-mode");
+        choiceButtons[i].setAttribute("aria-pressed", mode === selected || mode === pendingMode ? "true" : "false");
+      }
+      for (var j = 0; j < modeButtons.length; j++) {
+        var navMode = modeButtons[j].getAttribute("data-mode");
+        modeButtons[j].setAttribute("aria-pressed", navMode === selected ? "true" : "false");
+      }
+    }
+
+    var bgVideo = document.querySelector("#bg-video");
+    var bgStill = document.querySelector("#bg-still");
+    var posterUrl = "";
+
+    function captureFrame() {
+      if (!bgVideo || bgVideo.readyState < 2 || !bgVideo.videoWidth) return "";
+      var canvas = document.createElement("canvas");
+      canvas.width = bgVideo.videoWidth;
+      canvas.height = bgVideo.videoHeight;
+      canvas.getContext("2d").drawImage(bgVideo, 0, 0, canvas.width, canvas.height);
+      return canvas.toDataURL("image/jpeg", 0.86);
+    }
+
+    function setBackdrop(useStill) {
+      if (!bgVideo || !bgStill) return;
+      document.body.classList.toggle("on-home", !useStill);
+      if (useStill) {
+        var frame = captureFrame() || posterUrl;
+        if (frame) bgStill.src = frame;
+        bgVideo.pause();
+        bgStill.hidden = false;
+        bgVideo.hidden = true;
+      } else {
+        bgStill.hidden = true;
+        bgVideo.hidden = false;
+        if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+          var playing = bgVideo.play();
+          if (playing && playing.catch) playing.catch(function () {});
+        }
+      }
+    }
+
+    if (bgVideo) {
+      bgVideo.addEventListener("loadeddata", function () {
+        posterUrl = captureFrame();
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) setBackdrop(true);
+      });
+    }
+
+    function showView(name) {
+      currentMode = name;
+      viewHome.hidden = name !== "home";
+      workspace.hidden = name === "home";
+      viewRead.hidden = name !== "read";
+      viewSummary.hidden = name !== "summary";
+      viewPodcast.hidden = name !== "podcast";
+      viewQuiz.hidden = name !== "quiz";
+      setBackdrop(name !== "home");
+      if (name !== "read") pause();
+      if (name !== "podcast" && player && !player.paused) player.pause();
+      paintModes();
+    }
+
+    function orpIndex(word) {
+      var n = word.length;
+      if (n <= 1) return 0;
+      if (n <= 5) return 1;
+      if (n <= 9) return 2;
+      if (n <= 13) return 3;
+      return 4;
+    }
+
+    function renderWord(text) {
+      var at = orpIndex(text);
+      wordPre.textContent = text.slice(0, at);
+      wordOrp.textContent = text.charAt(at);
+      wordPost.textContent = text.slice(at + 1);
+    }
+
+    function formatRemaining(wordsLeft, wpm) {
+      var seconds = Math.round(wordsLeft * 60 / wpm);
+      if (seconds < 0) seconds = 0;
+      var minutes = Math.floor(seconds / 60);
+      var rest = seconds % 60;
+      return minutes + ":" + (rest < 10 ? "0" : "") + rest + " left";
+    }
+
+    function renderContext() {
+      while (contextEl.firstChild) contextEl.removeChild(contextEl.firstChild);
+      var tokens = reader.tokens;
+      if (!tokens.length) return;
+      var start = Math.max(0, reader.index - 35);
+      var end = Math.min(tokens.length, reader.index + 36);
+      var current = null;
+      var shownPage = null;
+      for (var n = start; n < end; n++) {
+        var token = tokens[n];
+        if (token.page && token.page !== shownPage) {
+          var mark = document.createElement("span");
+          mark.className = "page-mark";
+          mark.textContent = "Page " + token.page;
+          contextEl.appendChild(mark);
+          shownPage = token.page;
+        }
+        var span = document.createElement("span");
+        span.textContent = token.text + " ";
+        if (n === reader.index) {
+          span.className = "current";
+          current = span;
+        }
+        contextEl.appendChild(span);
+      }
+      if (!current) return;
+      var above = current.offsetTop < contextEl.scrollTop;
+      var below = current.offsetTop > contextEl.scrollTop + contextEl.clientHeight - 28;
+      if (above || below) {
+        contextEl.scrollTop = current.offsetTop - contextEl.clientHeight / 2;
+      }
+    }
+
+    function renderReader() {
+      var tokens = reader.tokens;
+      if (!tokens.length) return;
+      if (reader.index < 0) reader.index = 0;
+      if (reader.index > tokens.length - 1) reader.index = tokens.length - 1;
+      places[activeSource] = reader.index;
+      var token = tokens[reader.index];
+      renderWord(token.text);
+      var pct = Math.round(((reader.index + 1) / tokens.length) * 100);
+      statPercent.textContent = pct + "%";
+      statPosition.textContent = "Word " + (reader.index + 1) + " of " + tokens.length;
+      if (activeSource === "summary") {
+        readerKicker.textContent = "Reading the summary";
+        statPage.textContent = "Summary";
+      } else {
+        readerKicker.textContent = "Reading the document";
+        statPage.textContent = token.page ? ("Page " + token.page + " of " + doc.pageCount) : "Page unavailable";
+      }
+      statRemaining.textContent = formatRemaining(tokens.length - reader.index, Number(speedInput.value));
+      scrub.min = "0";
+      scrub.max = String(Math.max(tokens.length - 1, 0));
+      if (!scrubbing) scrub.value = String(reader.index);
+      renderContext();
+      renderPreview();
+      refreshControls();
+      if (activeSource === "document") writeSavedPlace();
+    }
+
+    function documentFingerprint(tokens) {
+      var hash = 2166136261;
+      for (var i = 0; i < tokens.length; i++) {
+        var word = tokens[i].text;
+        for (var c = 0; c < word.length; c++) {
+          hash ^= word.charCodeAt(c);
+          hash = Math.imul(hash, 16777619) >>> 0;
+        }
+      }
+      return tokens.length + "-" + hash.toString(16);
+    }
+
+    function readSavedPlace(id) {
+      try {
+        var saved = JSON.parse(localStorage.getItem("flashread-place") || "null");
+        if (!saved || saved.id !== id) return null;
+        var index = Math.floor(Number(saved.index));
+        if (!isFinite(index) || index < 0) return null;
+        return index;
+      } catch (err) {
+        return null;
+      }
+    }
+
+    function writeSavedPlace() {
+      if (!doc.tokens.length) return;
+      try {
+        localStorage.setItem("flashread-place", JSON.stringify({
+          id: documentFingerprint(doc.tokens),
+          index: places.document || 0
+        }));
+      } catch (err) {}
+    }
+
+    function previewKey(index) {
+      var token = reader.tokens[index];
+      if (!token || activeSource === "summary" || !token.page) return "all";
+      return String(token.page);
+    }
+
+    function buildDummyPage(key) {
+      dummyBody.textContent = "";
+      previewNodes = [];
+      previewCurrent = null;
+      if (key === "all") {
+        dummyLabel.textContent = activeSource === "summary" ? "Summary" : "Document";
+      } else {
+        dummyLabel.textContent = "Page " + key;
+      }
+      var frag = document.createDocumentFragment();
+      var tokens = reader.tokens;
+      for (var i = 0; i < tokens.length; i++) {
+        var page = tokens[i].page ? String(tokens[i].page) : "";
+        if (key !== "all" && page !== key) continue;
+        var span = document.createElement("span");
+        span.textContent = tokens[i].text + " ";
+        previewNodes[i] = span;
+        frag.appendChild(span);
+      }
+      dummyBody.appendChild(frag);
+    }
+
+    function renderPreview() {
+      if (!previewVisible || !reader.tokens.length) return;
+      var key = previewKey(reader.index);
+      if (reader.tokens !== previewTokens || key !== previewPageKey) {
+        previewTokens = reader.tokens;
+        previewPageKey = key;
+        buildDummyPage(key);
+      }
+      var current = previewNodes[reader.index];
+      if (!current) return;
+      if (previewCurrent) previewCurrent.classList.remove("current");
+      current.classList.add("current");
+      previewCurrent = current;
+      var top = current.offsetTop;
+      var viewTop = dummyBody.scrollTop;
+      var viewBottom = viewTop + dummyBody.clientHeight;
+      if (top < viewTop + 8 || top > viewBottom - 16) {
+        dummyBody.scrollTop = Math.max(0, top - dummyBody.clientHeight * 0.35);
+      }
+    }
+
+    function refreshControls() {
+      var has = reader.tokens.length > 0;
+      playBtn.disabled = !has || reader.playing;
+      pauseBtn.disabled = !has || !reader.playing;
+      rewindBtn.disabled = !has;
+      scrub.disabled = !has;
+      speedInput.disabled = !has;
+    }
+
+    function stopTimer() {
+      if (reader.timer !== null) {
+        clearTimeout(reader.timer);
+        reader.timer = null;
+      }
+    }
+
+    function delayFor(token) {
+      var ms = 60000 / Number(speedInput.value);
+      if (sentencePause.checked && token && /[.!?]["')\]]*$/.test(token.text)) ms += 280;
+      return ms;
+    }
+
+    function scheduleAdvance() {
+      stopTimer();
+      reader.timer = setTimeout(function () {
+        reader.timer = null;
+        if (!reader.playing) return;
+        if (reader.index >= reader.tokens.length - 1) {
+          reader.playing = false;
+          refreshControls();
+          setStatus(activeSource === "summary" ? "End of the summary." : "End of the document.");
+          track("reading_completed", {
+            wpm: Number(speedInput.value),
+            word_count: reader.tokens.length,
+            source: activeSource,
+            mode: "speed_read"
+          });
+          return;
+        }
+        reader.index += 1;
+        renderReader();
+        scheduleAdvance();
+      }, delayFor(reader.tokens[reader.index]));
+    }
+
+    function play() {
+      if (!reader.tokens.length || reader.playing) return;
+      if (reader.index >= reader.tokens.length - 1) {
+        reader.index = 0;
+        renderReader();
+      }
+      reader.playing = true;
+      refreshControls();
+      setStatus("Playing at " + speedInput.value + " words per minute.");
+      track("reading_started", {
+        wpm: Number(speedInput.value),
+        word_count: reader.tokens.length,
+        source: activeSource,
+        mode: "speed_read"
+      });
+      scheduleAdvance();
+    }
+
+    function pause() {
+      var wasPlaying = reader.playing;
+      reader.playing = false;
+      stopTimer();
+      refreshControls();
+      if (wasPlaying) {
+        setStatus("Paused.");
+        track("reading_paused", {
+          wpm: Number(speedInput.value),
+          source: activeSource,
+          mode: "speed_read"
+        });
+      }
+    }
+
+    function moveBy(amount) {
+      if (!reader.tokens.length) return;
+      var previous = reader.index;
+      reader.index = Math.max(0, Math.min(reader.tokens.length - 1, reader.index + amount));
+      renderReader();
+      var moved = Math.abs(reader.index - previous);
+      if (moved === 0) {
+        setStatus(amount < 0 ? "Already at the first word." : "Already at the last word.");
+      } else {
+        setStatus((reader.playing ? "Playing. " : "Paused. ") + (amount < 0 ? "Rewound " : "Forward ") + moved + " words.");
+      }
+      if (reader.playing) scheduleAdvance();
+    }
+
+    function showRead(source) {
+      pause();
+      activeSource = source === "summary" ? "summary" : "document";
+      reader.tokens = activeSource === "summary" ? summaryTokens : doc.tokens;
+      reader.index = places[activeSource] || 0;
+      showView("read");
+      renderReader();
+      setStatus(activeSource === "summary" ? "Ready to read the summary." : "Ready.");
+    }
+
+    function selectMode(mode) {
+      if (!doc.tokens.length) {
+        pendingMode = mode;
+        showView("home");
+        setHomeStatus("Add a text PDF first. FlashRead will open this mode when it is ready.");
+        paintModes();
+        dropzone.focus();
+        return;
+      }
+      if (mode === "summary" && currentMode === "summary") return;
+      if (mode === "podcast" && currentMode === "podcast") return;
+      if (mode === "read" && currentMode === "read" && activeSource === "document") return;
+      pendingMode = null;
+      track("mode_selected", { mode: modeKey(mode) });
+      if (mode === "read") showRead("document");
+      else showView(mode);
+    }
+
+    function wordsFromText(text) {
+      return text.split(/\s+/).filter(function (word) { return word.length > 0; }).map(function (word) {
+        return { text: word, page: null };
+      });
+    }
+
+    function documentText() {
+      var parts = [];
+      for (var i = 0; i < doc.tokens.length; i++) parts.push(doc.tokens[i].text);
+      return parts.join(" ");
+    }
+
+    function clipText(text) {
+      if (text.length <= TEXT_LIMIT) return { text: text, truncated: false };
+      return { text: text.slice(0, TEXT_LIMIT), truncated: true };
+    }
+
+    function postJson(url, text) {
+      return fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: text })
+      }).then(function (response) {
+        return response.json().then(function (data) {
+          return { ok: response.ok, data: data };
+        }, function () {
+          return { ok: false, data: { error: "The server returned an unreadable response." } };
+        });
+      });
+    }
+
+    function extractDocument(buffer) {
+      return pdfjsLib.getDocument({ data: buffer }).promise.then(function (pdf) {
+        var pageNumber = 1;
+        var tokens = [];
+        function readPage() {
+          if (pageNumber > pdf.numPages) {
+            return { tokens: tokens, pageCount: pdf.numPages };
+          }
+          var currentPage = pageNumber;
+          return pdf.getPage(currentPage).then(function (page) {
+            return page.getTextContent().then(function (content) {
+              var pendingHyphen = false;
+              content.items.forEach(function (item) {
+                if (!item.str) return;
+                var parts = item.str.split(/\s+/);
+                parts.forEach(function (part, index) {
+                  if (!part) {
+                    pendingHyphen = false;
+                    return;
+                  }
+                  var endsLine = item.hasEOL && index === parts.length - 1;
+                  if (pendingHyphen && /^[a-z]/.test(part)) {
+                    var last = tokens[tokens.length - 1];
+                    last.text = last.text.slice(0, -1) + part;
+                    pendingHyphen = false;
+                  } else {
+                    pendingHyphen = false;
+                    tokens.push({ text: part, page: currentPage });
+                  }
+                  if (endsLine && /[A-Za-z]-$/.test(tokens[tokens.length - 1].text)) {
+                    pendingHyphen = true;
+                  }
+                });
+              });
+              pageNumber += 1;
+              return readPage();
+            });
+          });
+        }
+        return readPage();
+      });
+    }
+
+    function resetDerived() {
+      summaryTokens = [];
+      summaryEl.textContent = "";
+      summaryNote.textContent = "";
+      speedSummaryBtn.disabled = true;
+      podcastStatus.textContent = "";
+      player.pause();
+      player.removeAttribute("src");
+      player.load();
+      quiz = null;
+      places.summary = 0;
+      clearQuizView();
+    }
+
+    function loadFile(file) {
+      if (!file) return;
+      var isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name || "");
+      if (!isPdf) {
+        setHomeStatus("Choose a PDF file.");
+        return;
+      }
+      var resume = currentMode;
+      pause();
+      doc = { tokens: [], pageCount: 0 };
+      places = { document: 0, summary: 0 };
+      resetDerived();
+      setHomeStatus("Reading the PDF…");
+      dropTitle.textContent = "Reading the PDF…";
+      file.arrayBuffer().then(function (buffer) {
+        return extractDocument(buffer);
+      }).then(function (extracted) {
+        if (!extracted.tokens.length) {
+          dropzone.classList.remove("ready");
+          dropTitle.textContent = "Drop a text-based PDF here";
+          setHomeStatus("No words found. Scanned pages keep their words inside a picture.");
+          showView("home");
+          return;
+        }
+        doc = extracted;
+        dropzone.classList.add("ready");
+        dropTitle.textContent = "PDF ready";
+        var savedIndex = readSavedPlace(documentFingerprint(extracted.tokens));
+        if (savedIndex !== null && savedIndex < extracted.tokens.length) places.document = savedIndex;
+        var minutes = Math.round(extracted.tokens.length / 300);
+        var timeLabel = minutes < 1 ? "under 1 min" : "about " + minutes + " min";
+        var resumeNote = places.document > 0 ? " Back at word " + (places.document + 1) + "." : "";
+        setHomeStatus(extracted.tokens.length + " words across " + extracted.pageCount + " page" + (extracted.pageCount === 1 ? "" : "s") + ", " + timeLabel + " at 300 wpm." + resumeNote + " Choose a way to learn it, or replace the PDF.");
+        track("pdf_uploaded", { word_count: extracted.tokens.length, page_count: extracted.pageCount });
+        var next = pendingMode;
+        pendingMode = null;
+        if (next) selectMode(next);
+        else if (resume === "read" || resume === "summary" || resume === "podcast" || resume === "quiz") {
+          currentMode = "home";
+          selectMode(resume === "quiz" ? quizReturn : resume);
+        } else showView("home");
+      }).catch(function () {
+        dropzone.classList.remove("ready");
+        dropTitle.textContent = "Drop a text-based PDF here";
+        setHomeStatus("Could not read that PDF. Try another text-based PDF.");
+        showView("home");
+      });
+    }
+
+    function generateSummary() {
+      if (busy.summary || !doc.tokens.length) return;
+      if (publicDemo) {
+        summaryEl.textContent = publicAiNote();
+        return;
+      }
+      busy.summary = true;
+      summarizeBtn.disabled = true;
+      summaryEl.textContent = "Generating summary…";
+      summaryNote.textContent = "";
+      var packed = clipText(documentText());
+      postJson("/api/summarize", packed.text).then(function (result) {
+        if (!result.ok || !result.data || !result.data.summary) {
+          summaryEl.textContent = (result.data && result.data.error) || "The summary could not be created.";
+          return;
+        }
+        summaryEl.textContent = result.data.summary;
+        summaryTokens = wordsFromText(result.data.summary);
+        places.summary = 0;
+        speedSummaryBtn.disabled = summaryTokens.length === 0;
+        if (result.data.truncated || packed.truncated) {
+          summaryNote.textContent = "This summary covers the beginning of the document. The rest was not sent.";
+        }
+        track("summary_generated", {
+          model: result.data.model,
+          characters_sent: result.data.characters_sent,
+          truncated: !!(result.data.truncated || packed.truncated),
+          mode: "summary"
+        });
+        track("ai_summary_completed", {
+          model: result.data.model,
+          characters_sent: result.data.characters_sent,
+          truncated: !!(result.data.truncated || packed.truncated)
+        });
+      }).catch(function () {
+        summaryEl.textContent = "The summary could not be created. Open FlashRead from the local server and try again.";
+      }).then(function () {
+        busy.summary = false;
+        summarizeBtn.disabled = false;
+      });
+    }
+
+    function generatePodcast() {
+      if (busy.podcast || !doc.tokens.length) return;
+      if (publicDemo) {
+        podcastStatus.textContent = publicAiNote();
+        return;
+      }
+      busy.podcast = true;
+      podcastBtn.disabled = true;
+      podcastStatus.textContent = "Writing the narration and creating an audio file on this computer. This can take a little while.";
+      var packed = clipText(documentText());
+      postJson("/api/podcast", packed.text).then(function (result) {
+        if (!result.ok || !result.data || !result.data.audio_url) {
+          podcastStatus.textContent = (result.data && result.data.error) || "The narration could not be created.";
+          return;
+        }
+        player.src = result.data.audio_url;
+        podcastStatus.textContent = "Narration ready. The script came from the AI model. The voice is Windows text-to-speech on this computer, saved as an audio file.";
+        if (result.data.truncated || packed.truncated) {
+          podcastStatus.textContent += " The audio covers the beginning of the document.";
+        }
+        track("podcast_generated", {
+          model: result.data.model,
+          characters_sent: result.data.characters_sent,
+          script_characters: result.data.script_characters,
+          audio_bytes: result.data.audio_bytes,
+          voice: result.data.voice,
+          truncated: !!(result.data.truncated || packed.truncated),
+          mode: "podcast"
+        });
+      }).catch(function () {
+        podcastStatus.textContent = "The narration could not be created. Open FlashRead from the local server and try again.";
+      }).then(function () {
+        busy.podcast = false;
+        podcastBtn.disabled = false;
+      });
+    }
+
+    function clearQuizView() {
+      quizProgress.textContent = "";
+      quizQuestion.textContent = "";
+      quizExplain.textContent = "";
+      quizScore.textContent = "";
+      while (quizChoices.firstChild) quizChoices.removeChild(quizChoices.firstChild);
+      quizNext.hidden = true;
+      quizRetry.hidden = true;
+      quizAnother.hidden = true;
+    }
+
+    function quizLooksValid(data) {
+      if (!data || !data.questions || data.questions.length < 5) return false;
+      for (var i = 0; i < 5; i++) {
+        var item = data.questions[i];
+        if (!item || !item.question || !item.choices || item.choices.length !== 4) return false;
+        if (item.answer !== 0 && item.answer !== 1 && item.answer !== 2 && item.answer !== 3) return false;
+      }
+      return true;
+    }
+
+    function renderQuizQuestion() {
+      var item = quiz.questions[quiz.pos];
+      quiz.locked = false;
+      quizProgress.textContent = "Question " + (quiz.pos + 1) + " of " + quiz.questions.length;
+      quizQuestion.textContent = item.question;
+      quizExplain.textContent = "";
+      quizScore.textContent = "";
+      quizNext.hidden = true;
+      while (quizChoices.firstChild) quizChoices.removeChild(quizChoices.firstChild);
+      for (var i = 0; i < item.choices.length; i++) {
+        var button = document.createElement("button");
+        button.type = "button";
+        button.className = "quiz-choice";
+        button.textContent = item.choices[i];
+        button.addEventListener("click", (function (choice) {
+          return function () { answerQuiz(choice); };
+        })(i));
+        quizChoices.appendChild(button);
+      }
+    }
+
+    function finishQuiz() {
+      var pct = Math.round((quiz.correct / quiz.questions.length) * 100);
+      quizScore.textContent = "You answered " + quiz.correct + " of " + quiz.questions.length + " correctly (" + pct + "%).";
+      quizRetry.hidden = false;
+      quizAnother.hidden = false;
+      if (!quiz.reported) {
+        quiz.reported = true;
+        track("quiz_completed", {
+          mode: modeKey(quizReturn),
+          score: quiz.correct,
+          question_count: quiz.questions.length,
+          percent: pct
+        });
+      }
+    }
+
+    function answerQuiz(choice) {
+      if (!quiz || quiz.locked) return;
+      quiz.locked = true;
+      var item = quiz.questions[quiz.pos];
+      var buttons = quizChoices.querySelectorAll("button");
+      for (var i = 0; i < buttons.length; i++) {
+        buttons[i].disabled = true;
+        if (i === item.answer) buttons[i].className = "quiz-choice right";
+        else if (i === choice) buttons[i].className = "quiz-choice wrong";
+      }
+      if (choice === item.answer) quiz.correct += 1;
+      quizExplain.textContent = item.explanation || "The highlighted choice is the one that matches the document.";
+      if (quiz.pos >= quiz.questions.length - 1) finishQuiz();
+      else quizNext.hidden = false;
+    }
+
+    function generateQuiz() {
+      if (busy.quiz || !doc.tokens.length) return;
+      if (publicDemo) {
+        showView("quiz");
+        quizProgress.textContent = publicAiNote();
+        return;
+      }
+      busy.quiz = true;
+      clearQuizView();
+      quizProgress.textContent = "Writing questions from the document…";
+      var packed = clipText(documentText());
+      var fromMode = quizReturn;
+      postJson("/api/quiz", packed.text).then(function (result) {
+        if (!result.ok || !quizLooksValid(result.data)) {
+          quizProgress.textContent = (result.data && result.data.error) || "The quiz could not be created.";
+          return;
+        }
+        quiz = {
+          questions: result.data.questions.slice(0, 5),
+          pos: 0,
+          correct: 0,
+          locked: false,
+          reported: false,
+          truncated: !!(result.data.truncated || packed.truncated)
+        };
+        if (quiz.truncated) {
+          quizScore.textContent = "These questions use the beginning of the document.";
+        }
+        track("quiz_started", {
+          mode: modeKey(fromMode),
+          question_count: quiz.questions.length,
+          truncated: quiz.truncated
+        });
+        renderQuizQuestion();
+        if (quiz.truncated) {
+          quizScore.textContent = "These questions use the beginning of the document.";
+        }
+      }).catch(function () {
+        quizProgress.textContent = "The quiz could not be created. Open FlashRead from the local server and try again.";
+      }).then(function () {
+        busy.quiz = false;
+      });
+    }
+
+    function openQuiz() {
+      quizReturn = currentMode === "quiz" ? quizReturn : currentMode;
+      showView("quiz");
+      generateQuiz();
+    }
+
+    browseBtn.addEventListener("click", function (event) {
+      event.stopPropagation();
+      pdfInput.click();
+    });
+    dropzone.addEventListener("click", function () { pdfInput.click(); });
+    dropzone.addEventListener("keydown", function (event) {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        pdfInput.click();
+      }
+    });
+    pdfInput.addEventListener("change", function () {
+      var file = pdfInput.files && pdfInput.files[0];
+      pdfInput.value = "";
+      loadFile(file);
+    });
+    dropzone.addEventListener("dragover", function (event) {
+      event.preventDefault();
+      dropzone.classList.add("drag");
+    });
+    dropzone.addEventListener("dragleave", function () { dropzone.classList.remove("drag"); });
+    dropzone.addEventListener("drop", function (event) {
+      event.preventDefault();
+      dropzone.classList.remove("drag");
+      var file = event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0];
+      loadFile(file);
+    });
+
+    for (var c = 0; c < choiceButtons.length; c++) {
+      choiceButtons[c].addEventListener("click", function () {
+        selectMode(this.getAttribute("data-mode"));
+      });
+    }
+    for (var m = 0; m < modeButtons.length; m++) {
+      modeButtons[m].addEventListener("click", function () {
+        selectMode(this.getAttribute("data-mode"));
+      });
+    }
+    document.querySelector("#go-home").addEventListener("click", function () {
+      pendingMode = null;
+      showView("home");
+    });
+
+    playBtn.addEventListener("click", play);
+    pauseBtn.addEventListener("click", pause);
+    rewindBtn.addEventListener("click", function () { moveBy(-10); });
+    document.querySelector("#quiz-from-read").addEventListener("click", openQuiz);
+    document.querySelector("#quiz-from-summary").addEventListener("click", openQuiz);
+    document.querySelector("#quiz-from-podcast").addEventListener("click", openQuiz);
+    summarizeBtn.addEventListener("click", generateSummary);
+    speedSummaryBtn.addEventListener("click", function () {
+      if (!summaryTokens.length) return;
+      showRead("summary");
+    });
+    podcastBtn.addEventListener("click", generatePodcast);
+    quizNext.addEventListener("click", function () {
+      if (!quiz) return;
+      quiz.pos += 1;
+      renderQuizQuestion();
+    });
+    quizRetry.addEventListener("click", function () {
+      if (!quiz) return;
+      quiz.pos = 0;
+      quiz.correct = 0;
+      renderQuizQuestion();
+    });
+    quizAnother.addEventListener("click", generateQuiz);
+    document.querySelector("#quiz-back").addEventListener("click", function () {
+      if (quizReturn === "read") showRead(activeSource);
+      else showView(quizReturn || "read");
+    });
+
+    var rateButtons = document.querySelectorAll("[data-rate]");
+    for (var r = 0; r < rateButtons.length; r++) {
+      rateButtons[r].addEventListener("click", function () {
+        player.playbackRate = Number(this.getAttribute("data-rate"));
+      });
+    }
+
+    speedInput.addEventListener("input", function () {
+      speedValue.textContent = speedInput.value;
+      if (reader.tokens.length) renderReader();
+      if (reader.playing) scheduleAdvance();
+    });
+    speedInput.addEventListener("change", function () {
+      if (!reader.tokens.length) return;
+      track("reading_speed_changed", {
+        wpm: Number(speedInput.value),
+        source: activeSource,
+        mode: "speed_read"
+      });
+    });
+    fontInput.addEventListener("input", function () {
+      fontValue.textContent = fontInput.value;
+      document.documentElement.style.setProperty("--word-size", fontInput.value + "px");
+    });
+    scrub.addEventListener("pointerdown", function () { scrubbing = true; });
+    scrub.addEventListener("pointerup", function () { scrubbing = false; });
+    scrub.addEventListener("change", function () { scrubbing = false; });
+    scrub.addEventListener("input", function () {
+      if (!reader.tokens.length) return;
+      reader.index = Number(scrub.value);
+      renderReader();
+      if (reader.playing) scheduleAdvance();
+      else setStatus("Paused.");
+    });
+    toggleContext.addEventListener("click", function () {
+      contextVisible = !contextVisible;
+      contextEl.hidden = !contextVisible;
+      toggleContext.textContent = contextVisible ? "Hide surrounding text" : "Show surrounding text";
+    });
+    togglePreview.addEventListener("click", function () {
+      previewVisible = !previewVisible;
+      pagePreviewWrap.hidden = !previewVisible;
+      readStage.classList.toggle("preview-off", !previewVisible);
+      togglePreview.textContent = previewVisible ? "Hide page" : "Show page";
+      if (previewVisible && reader.tokens.length) renderPreview();
+    });
+
+    document.addEventListener("keydown", function (event) {
+      if (currentMode !== "read") return;
+      var tag = event.target && event.target.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if (event.key === " " || event.code === "Space") {
+        event.preventDefault();
+        if (reader.playing) pause();
+        else play();
+      } else if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        moveBy(-10);
+      } else if (event.key === "ArrowRight") {
+        event.preventDefault();
+        moveBy(10);
+      }
+    });
+
+    window.flashreadReplaySync = function () {
+      var choice = localStorage.getItem("flashread-replay");
+      if (choice === "on" && window.posthog) posthog.startSessionRecording();
+      if (choice === "off" && window.posthog && posthog.stopSessionRecording) posthog.stopSessionRecording();
+      if (choice === "on") {
+        replayText.textContent = "This visit is being recorded for product testing. Document text, summaries, and quizzes are masked.";
+        replayAllow.hidden = true;
+        replayDecline.hidden = false;
+        replayDecline.textContent = "Stop recording";
+      } else if (choice === "off") {
+        replayText.textContent = "Recording is off. Allow it when a tester should be able to review this session.";
+        replayAllow.hidden = false;
+        replayAllow.textContent = "Allow recording";
+        replayDecline.hidden = true;
+      } else {
+        replayText.textContent = "FlashRead can record this visit for product testing. Document text, summaries, and quizzes are masked. Recording stays off until you allow it.";
+        replayAllow.hidden = false;
+        replayAllow.textContent = "Allow recording";
+        replayDecline.hidden = false;
+        replayDecline.textContent = "Not now";
+      }
+    };
+    replayAllow.addEventListener("click", function () {
+      localStorage.setItem("flashread-replay", "on");
+      window.flashreadReplaySync();
+    });
+    replayDecline.addEventListener("click", function () {
+      localStorage.setItem("flashread-replay", "off");
+      window.flashreadReplaySync();
+    });
+
+    refreshControls();
+    window.flashreadReplaySync();
+  </script>
+</body>
+</html>
