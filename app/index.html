@@ -261,6 +261,14 @@
       line-height: 1.55;
     }
     .context .current { background: var(--mark); color: var(--ink); border-radius: 4px; }
+    .context .page-mark {
+      display: inline-block;
+      margin: 0 6px 0 2px;
+      color: var(--accent);
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
 
     .note { color: var(--muted); font-size: 14px; line-height: 1.45; }
     #summary, #quiz-explain, .quiz-q {
@@ -602,9 +610,18 @@
       var start = Math.max(0, reader.index - 35);
       var end = Math.min(tokens.length, reader.index + 36);
       var current = null;
+      var shownPage = null;
       for (var n = start; n < end; n++) {
+        var token = tokens[n];
+        if (token.page && token.page !== shownPage) {
+          var mark = document.createElement("span");
+          mark.className = "page-mark";
+          mark.textContent = "Page " + token.page;
+          contextEl.appendChild(mark);
+          shownPage = token.page;
+        }
         var span = document.createElement("span");
-        span.textContent = tokens[n].text + " ";
+        span.textContent = token.text + " ";
         if (n === reader.index) {
           span.className = "current";
           current = span;
@@ -643,6 +660,41 @@
       if (!scrubbing) scrub.value = String(reader.index);
       renderContext();
       refreshControls();
+      if (activeSource === "document") writeSavedPlace();
+    }
+
+    function documentFingerprint(tokens) {
+      var hash = 2166136261;
+      for (var i = 0; i < tokens.length; i++) {
+        var word = tokens[i].text;
+        for (var c = 0; c < word.length; c++) {
+          hash ^= word.charCodeAt(c);
+          hash = Math.imul(hash, 16777619) >>> 0;
+        }
+      }
+      return tokens.length + "-" + hash.toString(16);
+    }
+
+    function readSavedPlace(id) {
+      try {
+        var saved = JSON.parse(localStorage.getItem("flashread-place") || "null");
+        if (!saved || saved.id !== id) return null;
+        var index = Math.floor(Number(saved.index));
+        if (!isFinite(index) || index < 0) return null;
+        return index;
+      } catch (err) {
+        return null;
+      }
+    }
+
+    function writeSavedPlace() {
+      if (!doc.tokens.length) return;
+      try {
+        localStorage.setItem("flashread-place", JSON.stringify({
+          id: documentFingerprint(doc.tokens),
+          index: places.document || 0
+        }));
+      } catch (err) {}
     }
 
     function refreshControls() {
@@ -807,10 +859,27 @@
           var currentPage = pageNumber;
           return pdf.getPage(currentPage).then(function (page) {
             return page.getTextContent().then(function (content) {
+              var pendingHyphen = false;
               content.items.forEach(function (item) {
                 if (!item.str) return;
-                item.str.split(/\s+/).forEach(function (part) {
-                  if (part) tokens.push({ text: part, page: currentPage });
+                var parts = item.str.split(/\s+/);
+                parts.forEach(function (part, index) {
+                  if (!part) {
+                    pendingHyphen = false;
+                    return;
+                  }
+                  var endsLine = item.hasEOL && index === parts.length - 1;
+                  if (pendingHyphen && /^[a-z]/.test(part)) {
+                    var last = tokens[tokens.length - 1];
+                    last.text = last.text.slice(0, -1) + part;
+                    pendingHyphen = false;
+                  } else {
+                    pendingHyphen = false;
+                    tokens.push({ text: part, page: currentPage });
+                  }
+                  if (endsLine && /[A-Za-z]-$/.test(tokens[tokens.length - 1].text)) {
+                    pendingHyphen = true;
+                  }
                 });
               });
               pageNumber += 1;
@@ -863,7 +932,12 @@
         doc = extracted;
         dropzone.classList.add("ready");
         dropTitle.textContent = "PDF ready";
-        setHomeStatus(extracted.tokens.length + " words across " + extracted.pageCount + " page" + (extracted.pageCount === 1 ? "" : "s") + ". Choose a way to learn it, or replace the PDF.");
+        var savedIndex = readSavedPlace(documentFingerprint(extracted.tokens));
+        if (savedIndex !== null && savedIndex < extracted.tokens.length) places.document = savedIndex;
+        var minutes = Math.round(extracted.tokens.length / 300);
+        var timeLabel = minutes < 1 ? "under 1 min" : "about " + minutes + " min";
+        var resumeNote = places.document > 0 ? " Back at word " + (places.document + 1) + "." : "";
+        setHomeStatus(extracted.tokens.length + " words across " + extracted.pageCount + " page" + (extracted.pageCount === 1 ? "" : "s") + ", " + timeLabel + " at 300 wpm." + resumeNote + " Choose a way to learn it, or replace the PDF.");
         track("pdf_uploaded", { word_count: extracted.tokens.length, page_count: extracted.pageCount });
         var next = pendingMode;
         pendingMode = null;

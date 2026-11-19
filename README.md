@@ -15,7 +15,7 @@ Upload a text-based PDF and choose **Speed Read PDF**, **Summarize PDF**, or **P
 
 ![FlashRead Build 1 prototype](docs/assets/flashread-build1.png)
 
-**Limitations:** scanned PDFs (images of text) produce no words. Multi-column papers may extract in a messy order. Loading the page needs internet for PDF.js. Your place is not saved when you close the tab. A live summary, quiz, or narration needs an OpenRouter key. The narration voice is the Windows voice on this computer.
+**Limitations:** scanned PDFs (images of text) produce no words. Multi-column papers may extract in a messy order. Loading the page needs internet for PDF.js. Your place in a document is saved in this browser only, as a position number, and is restored when you upload the same PDF again. A live summary, quiz, or narration needs an OpenRouter key. The narration voice is the Windows voice on this computer.
 
 ## Run FlashRead on Windows
 

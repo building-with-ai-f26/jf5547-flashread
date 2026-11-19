@@ -40,7 +40,7 @@ The buttons send extracted words to `POST /api/summarize`, `POST /api/quiz`, or 
 5. In PostHog, look for `$pageview` and `clicked_try_product` from the Product Page, and the reading events from the local app. Allow recording on a test visit before expecting a replay.
 
 ## 7. Known limitations
-Scanned or outlined PDFs produce no words. Multi-column pages may extract out of order. The place is not saved after the tab closes. PDF.js needs internet. The app is local only. A live summary, quiz, or narration is not on the Product Page until a real OpenRouter call succeeds. Podcast audio uses the Windows voice and is not a cloud podcast. Session replay is opt-in, and masked text will not show the reading, summary, or quiz.
+Scanned or outlined PDFs produce no words. Multi-column pages may extract out of order. The reading position for a document is stored in this browser as a number and restored on the next upload of that same PDF. It is not sent to PostHog. Line-break hyphens are joined when the next fragment starts with a lowercase letter. The surrounding text marks the PDF page. PDF.js needs internet. The app is local only. A live summary, quiz, or narration is not on the Product Page until a real OpenRouter call succeeds. Podcast audio uses the Windows voice and is not a cloud podcast. Session replay is opt-in, and masked text will not show the reading, summary, or quiz.
 
 ## 8. Non-Negotiable Engineering Rules
 1. **Plan before coding:** Before touching multiple files, propose a brief plan and wait for approval.
