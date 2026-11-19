@@ -18,7 +18,7 @@
       person_profiles: "identified_only",
       session_recording: {
         maskAllInputs: true,
-        maskTextSelector: "#word, #summary, #status"
+        maskTextSelector: "#word, #word *, #context, #context *, #summary, #summary-note, #quiz, #quiz *, #status, #home-status, #podcast-status, .ph-mask"
       },
       loaded: function (ph) {
         ph.register({ page_type: "local_app" });
@@ -29,444 +29,1182 @@
   </script>
   <style>
     :root {
-      --bg: #f4f1ea;
-      --card: #fffdf8;
-      --text: #1c1915;
-      --muted: #5c564c;
-      --line: #e4ddd0;
-      --accent: #1f4fd8;
-      --accent-dark: #163aa3;
+      --ink: #1c1915;
+      --muted: #5e584e;
+      --line: rgba(28, 25, 21, 0.12);
+      --card: rgba(255, 252, 247, 0.9);
+      --accent: #1d6b57;
+      --accent-soft: rgba(29, 107, 87, 0.12);
+      --orp: #a33b32;
+      --mark: #f3d7a1;
+      --word-size: 64px;
     }
 
     * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
 
     body {
       margin: 0;
       min-height: 100vh;
-      font-family: "Segoe UI", sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.5;
+      color: var(--ink);
+      font-family: "Segoe UI", Calibri, sans-serif;
+      background:
+        radial-gradient(1100px 520px at 8% -10%, rgba(255, 236, 206, 0.95), transparent 58%),
+        radial-gradient(900px 480px at 110% 0%, rgba(186, 214, 206, 0.7), transparent 52%),
+        linear-gradient(180deg, #f7f3ec 0%, #eef2f4 100%);
     }
 
-    main {
-      max-width: 720px;
+    button, input { font: inherit; color: inherit; }
+    button { cursor: pointer; }
+    button:disabled { cursor: not-allowed; opacity: 0.45; }
+    button:focus-visible, input:focus-visible, .dropzone:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 3px;
+    }
+
+    .shell {
+      width: min(980px, calc(100% - 40px));
       margin: 0 auto;
-      padding: 40px 20px 64px;
+      padding: 36px 0 120px;
+    }
+
+    .home {
+      min-height: calc(100vh - 180px);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .eyebrow {
+      margin: 0;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      font-size: 12px;
+      color: var(--accent);
+      font-weight: 650;
     }
 
     h1 {
-      margin: 0 0 8px;
-      font-size: 32px;
+      margin: 10px 0 0;
+      font-family: Georgia, "Palatino Linotype", serif;
+      font-size: clamp(40px, 6vw, 68px);
+      font-weight: 500;
       letter-spacing: -0.03em;
+      line-height: 1.02;
     }
 
     .lede {
-      margin: 0 0 24px;
+      margin: 14px auto 0;
+      max-width: 560px;
       color: var(--muted);
+      font-size: 18px;
+      line-height: 1.5;
     }
 
-    .upload {
-      display: inline-block;
-      margin-bottom: 12px;
-      padding: 10px 16px;
-      border-radius: 8px;
-      background: var(--accent);
-      color: white;
-      font-weight: 600;
+    .dropzone {
+      margin: 28px auto 0;
+      width: min(680px, 100%);
+      border: 1.5px dashed rgba(28, 25, 21, 0.24);
+      background: rgba(255, 252, 247, 0.72);
+      border-radius: 20px;
+      padding: 28px 22px 22px;
+      text-align: center;
       cursor: pointer;
     }
 
-    .upload:hover { background: var(--accent-dark); }
-
-    .upload input {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      overflow: hidden;
-      clip: rect(0 0 0 0);
+    .dropzone.drag, .dropzone:hover {
+      border-color: var(--accent);
+      background: rgba(232, 244, 239, 0.88);
     }
 
-    #status {
-      min-height: 1.5em;
-      margin: 0 0 20px;
-      color: var(--muted);
+    .dropzone.ready { border-style: solid; border-color: rgba(29, 107, 87, 0.45); }
+    .dropzone h2 { margin: 0; font-size: 22px; font-weight: 600; }
+    #home-status { margin: 8px 0 0; color: var(--muted); }
+
+    .text-btn, .primary, .quiet {
+      border-radius: 999px;
+      border: 1px solid transparent;
+      padding: 10px 16px;
     }
+
+    .text-btn {
+      margin-top: 14px;
+      background: var(--ink);
+      color: #f7f4ee;
+    }
+
+    .primary { background: var(--accent); color: #f4fbf8; border-color: var(--accent); }
+    .quiet { background: transparent; border-color: var(--line); }
+
+    .choices {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-top: 22px;
+      text-align: left;
+    }
+
+    .choice {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-height: 180px;
+      padding: 18px 16px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: var(--card);
+      box-shadow: 0 16px 40px rgba(48, 36, 18, 0.05);
+      text-align: left;
+      transition: border-color 0.16s ease, transform 0.16s ease;
+    }
+
+    .choice:hover, .choice[aria-pressed="true"] {
+      border-color: rgba(29, 107, 87, 0.75);
+      transform: translateY(-2px);
+    }
+
+    .choice svg { width: 28px; height: 28px; stroke: var(--accent); fill: none; stroke-width: 1.7; }
+    .choice strong { font-size: 18px; }
+    .choice span { color: var(--muted); line-height: 1.4; }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 22px;
+    }
+
+    .modes { display: flex; flex-wrap: wrap; gap: 8px; }
+    .modes button, #go-home {
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255, 252, 247, 0.7);
+      padding: 8px 12px;
+    }
+    .modes button[aria-pressed="true"] {
+      background: var(--accent-soft);
+      border-color: rgba(29, 107, 87, 0.45);
+      color: var(--accent);
+    }
+
+    .panel {
+      background: rgba(255, 252, 247, 0.78);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      padding: 22px 22px 18px;
+      box-shadow: 0 18px 50px rgba(48, 36, 18, 0.05);
+    }
+
+    .kicker { margin: 0; color: var(--accent); font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; }
+    h2.view-title { margin: 6px 0 0; font-family: Georgia, "Palatino Linotype", serif; font-weight: 500; font-size: 32px; }
 
     .stage {
+      position: relative;
+      min-height: 168px;
       display: flex;
       align-items: center;
-      justify-content: center;
-      min-height: 180px;
-      margin-bottom: 12px;
-      padding: 24px;
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      background: var(--card);
+      margin: 8px 0 4px;
     }
 
-    #word {
-      margin: 0;
-      font-size: 56px;
-      line-height: 1.15;
-      text-align: center;
-      overflow-wrap: anywhere;
+    .stage::before {
+      content: "";
+      position: absolute;
+      top: 18px;
+      left: 50%;
+      width: 2px;
+      height: 16px;
+      transform: translateX(-50%);
+      background: var(--orp);
+      border-radius: 2px;
     }
 
-    #progress {
-      min-height: 1.5em;
-      margin: 0 0 16px;
-      text-align: center;
-      color: var(--muted);
+    .wordline {
+      display: flex;
+      width: 100%;
+      align-items: baseline;
+      font-family: Georgia, "Palatino Linotype", serif;
+      font-size: var(--word-size);
+      line-height: 1;
+      letter-spacing: -0.03em;
     }
 
-    .controls {
+    .wordline .pre, .wordline .post { flex: 1 1 0; white-space: pre; }
+    .wordline .pre { text-align: right; }
+    .wordline .post { text-align: left; }
+    .wordline .orp { color: var(--orp); }
+
+    .stats, .sliders, .controls, .row {
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-
-    button {
-      padding: 10px 16px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: white;
-      color: var(--text);
-      font: inherit;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    button:hover:not(:disabled) { border-color: var(--accent); }
-
-    button:disabled {
-      color: #9a9388;
-      cursor: not-allowed;
-    }
-
-    .speed {
-      display: grid;
-      grid-template-columns: auto 1fr auto;
-      gap: 12px;
+      gap: 10px 16px;
       align-items: center;
     }
 
-    .speed input { width: 100%; }
+    .stats { color: var(--muted); font-size: 14px; margin: 4px 0 10px; }
+    .meter { margin: 0 0 12px; }
+    .meter input, .sliders input[type="range"] { width: 100%; accent-color: var(--accent); }
+    .sliders { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 22px; margin: 12px 0; }
+    .sliders label, .check { color: var(--muted); font-size: 14px; }
+    .hint { margin: 8px 0 0; color: var(--muted); font-size: 13px; }
 
-    .summary-block { margin-top: 28px; }
+    .context-wrap { margin-top: 16px; }
+    .context {
+      position: relative;
+      max-height: 148px;
+      overflow: auto;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(255, 252, 247, 0.9);
+      border: 1px solid var(--line);
+      color: #4a453c;
+      line-height: 1.55;
+    }
+    .context .current { background: var(--mark); color: var(--ink); border-radius: 4px; }
 
-    #summary {
-      margin: 12px 0 0;
+    .note { color: var(--muted); font-size: 14px; line-height: 1.45; }
+    #summary, #quiz-explain, .quiz-q {
       white-space: pre-wrap;
+      line-height: 1.5;
     }
+    #summary { font-size: 17px; }
 
-    .note {
-      margin: 12px 0 0;
-      color: var(--muted);
-      font-size: 14px;
+    .quiz-choice, .rate {
+      display: block;
+      width: 100%;
+      text-align: left;
+      margin-top: 8px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: #fffdf9;
     }
+    .quiz-choice.right { border-color: var(--accent); background: var(--accent-soft); }
+    .quiz-choice.wrong { border-color: #a33b32; background: rgba(163, 59, 50, 0.08); }
+    .rate { width: auto; display: inline-block; margin-right: 8px; }
 
+    audio { width: min(100%, 520px); margin: 12px 0; }
     .replay-bar {
+      position: fixed;
+      left: 20px;
+      right: 20px;
+      bottom: 14px;
+      z-index: 3;
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
       align-items: center;
-      margin-top: 28px;
       padding: 12px 14px;
       border: 1px solid var(--line);
-      border-radius: 12px;
-      background: var(--card);
+      border-radius: 14px;
+      background: rgba(255, 252, 247, 0.94);
       color: var(--muted);
       font-size: 14px;
+      box-shadow: 0 10px 30px rgba(48, 36, 18, 0.08);
+    }
+    .replay-bar p { margin: 0; flex: 1 1 240px; }
+    .fine { margin: 18px 0 0; color: var(--muted); font-size: 13px; text-align: center; }
+
+    @media (max-width: 800px) {
+      .choices, .sliders { grid-template-columns: 1fr; }
+      .home { min-height: auto; padding-top: 24px; }
+      .topbar { align-items: flex-start; flex-direction: column; }
     }
 
-    .replay-bar p { margin: 0; flex: 1 1 240px; }
-
-    .replay-bar button[hidden] { display: none; }
+    @media (prefers-reduced-motion: reduce) {
+      .choice { transition: none; }
+      .choice:hover, .choice[aria-pressed="true"] { transform: none; }
+    }
   </style>
 </head>
 <body>
-  <main>
-    <h1>FlashRead</h1>
-    <p class="lede">Upload a text-based academic PDF. FlashRead shows one word at a time in the same spot. A short AI summary is optional and runs only when you click the button.</p>
-
-    <label class="upload">
-      Choose a PDF
-      <input id="pdf-input" type="file" accept="application/pdf,.pdf" />
-    </label>
-    <p id="status">Choose a text-based PDF to begin.</p>
-
-    <section class="stage" aria-label="Current word">
-      <p id="word">Upload a PDF</p>
+  <div class="shell">
+    <section id="view-home" class="home">
+      <p class="eyebrow">FlashRead</p>
+      <h1>What do you want to do?</h1>
+      <p class="lede">Upload a text-based PDF, then choose how to learn it. The file stays on this computer until you ask for an AI action.</p>
+      <div id="dropzone" class="dropzone" tabindex="0">
+        <h2 id="drop-title">Drop a text-based PDF here</h2>
+        <p id="home-status" class="ph-mask">or browse from this computer</p>
+        <button id="browse" class="text-btn" type="button">Browse</button>
+        <input id="pdf-input" type="file" accept="application/pdf,.pdf" hidden />
+      </div>
+      <div class="choices">
+        <button class="choice" type="button" data-mode="read">
+          <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M5 16h7M20 16h7"/><circle cx="16" cy="16" r="3.2"/></svg>
+          <strong>Speed Read PDF</strong>
+          <span>Read one word at a time, with your place and the surrounding text in view.</span>
+        </button>
+        <button class="choice" type="button" data-mode="summary">
+          <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M7 6h14l6 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"/><path d="M20 6v6h6M9 16h12M9 21h8"/></svg>
+          <strong>Summarize PDF</strong>
+          <span>Generate a short AI summary, then speed-read that summary.</span>
+        </button>
+        <button class="choice" type="button" data-mode="podcast">
+          <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 5a5 5 0 0 1 5 5v6a5 5 0 0 1-10 0v-6a5 5 0 0 1 5-5z"/><path d="M8 15a8 8 0 0 0 16 0M16 23v4M12 27h8"/></svg>
+          <strong>PDF to Podcast</strong>
+          <span>Turn the document into a short narration you can play.</span>
+        </button>
+      </div>
     </section>
-    <p id="progress"></p>
 
-    <div class="controls">
-      <button id="play" type="button">Play</button>
-      <button id="pause" type="button">Pause</button>
-      <button id="rewind" type="button">Rewind 10 words</button>
+    <div id="workspace" hidden>
+      <div class="topbar">
+        <button id="go-home" type="button">Home</button>
+        <nav class="modes" aria-label="Learning modes">
+          <button type="button" data-mode="read">Speed read</button>
+          <button type="button" data-mode="summary">Summary</button>
+          <button type="button" data-mode="podcast">Podcast</button>
+        </nav>
+      </div>
+
+      <section id="view-read" class="panel" hidden>
+        <p id="reader-kicker" class="kicker">Reading the document</p>
+        <div class="stage" aria-hidden="false">
+          <p id="word" class="wordline ph-mask">
+            <span id="word-pre" class="pre"></span><span id="word-orp" class="orp"></span><span id="word-post" class="post"></span>
+          </p>
+        </div>
+        <div class="meter">
+          <input id="scrub" type="range" min="0" max="0" value="0" aria-label="Reading position" />
+        </div>
+        <div class="stats">
+          <span id="stat-percent">0%</span>
+          <span id="stat-position"></span>
+          <span id="stat-page"></span>
+          <span id="stat-remaining"></span>
+        </div>
+        <div class="controls">
+          <button id="play" class="primary" type="button">Play</button>
+          <button id="pause" class="quiet" type="button">Pause</button>
+          <button id="rewind" class="quiet" type="button">Rewind 10 words</button>
+          <button id="quiz-from-read" class="quiet" type="button">Test My Understanding</button>
+        </div>
+        <div class="sliders">
+          <label>Speed <span id="speed-value">300</span> wpm
+            <input id="speed" type="range" min="150" max="600" step="10" value="300" />
+          </label>
+          <label>Text size <span id="font-value">64</span>
+            <input id="font-size" type="range" min="36" max="96" step="2" value="64" />
+          </label>
+        </div>
+        <label class="check"><input id="sentence-pause" type="checkbox" /> Pause briefly at sentences</label>
+        <p id="status" class="hint ph-mask">Ready.</p>
+        <div class="context-wrap">
+          <button id="toggle-context" class="quiet" type="button">Hide surrounding text</button>
+          <div id="context" class="context ph-mask"></div>
+        </div>
+        <p class="hint">Space plays or pauses. Left arrow rewinds 10 words. Right arrow moves forward 10 words.</p>
+      </section>
+
+      <section id="view-summary" class="panel" hidden>
+        <p class="kicker">Summarize PDF</p>
+        <h2 class="view-title">A shorter way through the reading</h2>
+        <p class="note">Generate Summary sends the extracted text to OpenRouter through this computer. Nothing is sent until you click. Do not send a document you are not allowed to share with that service. Long documents send the beginning only.</p>
+        <div class="row">
+          <button id="summarize" class="primary" type="button">Generate Summary</button>
+          <button id="speed-summary" class="quiet" type="button" disabled>Speed Read Summary</button>
+          <button id="quiz-from-summary" class="quiet" type="button">Test My Understanding</button>
+        </div>
+        <div id="summary" class="ph-mask"></div>
+        <p id="summary-note" class="note ph-mask"></p>
+      </section>
+
+      <section id="view-podcast" class="panel" hidden>
+        <p class="kicker">PDF to Podcast</p>
+        <h2 class="view-title">Listen to the document</h2>
+        <p class="note">Generate Podcast sends the extracted text to OpenRouter to write a script. This computer then saves a WAV file with the Windows voice. That voice is local narration, not a cloud podcast studio. Nothing is sent until you click.</p>
+        <div class="row">
+          <button id="make-podcast" class="primary" type="button">Generate Podcast</button>
+          <button id="quiz-from-podcast" class="quiet" type="button">Test My Understanding</button>
+        </div>
+        <p id="podcast-status" class="note ph-mask"></p>
+        <audio id="player" controls preload="metadata"></audio>
+        <div class="row" aria-label="Narration speed">
+          <button class="rate" type="button" data-rate="0.75">0.75×</button>
+          <button class="rate" type="button" data-rate="1">1×</button>
+          <button class="rate" type="button" data-rate="1.25">1.25×</button>
+          <button class="rate" type="button" data-rate="1.5">1.5×</button>
+        </div>
+      </section>
+
+      <section id="view-quiz" class="panel" hidden>
+        <p class="kicker">Comprehension</p>
+        <h2 class="view-title">Test My Understanding</h2>
+        <p class="note">Questions are written from the original PDF, not from the summary or the words already flashed. Generate sends that text to OpenRouter. Long documents send the beginning only.</p>
+        <div id="quiz" class="ph-mask">
+          <p id="quiz-progress" class="note"></p>
+          <p id="quiz-question" class="quiz-q"></p>
+          <div id="quiz-choices"></div>
+          <p id="quiz-explain"></p>
+          <p id="quiz-score"></p>
+        </div>
+        <div class="row">
+          <button id="quiz-next" class="primary" type="button" hidden>Next question</button>
+          <button id="quiz-retry" class="quiet" type="button" hidden>Try Again</button>
+          <button id="quiz-another" class="quiet" type="button" hidden>Generate Another Quiz</button>
+          <button id="quiz-back" class="quiet" type="button">Back</button>
+        </div>
+      </section>
     </div>
 
-    <label class="speed">
-      <span>Speed</span>
-      <input id="speed" type="range" min="150" max="600" step="10" value="300" />
-      <span><span id="speed-value">300</span> wpm</span>
-    </label>
-
-    <div class="summary-block">
-      <button id="summarize" type="button">Summarize PDF with AI</button>
-      <p id="summary"></p>
-      <p class="note">
-        Summarize sends the extracted words to OpenRouter through this computer's local server.
-        The PDF file and its name stay here, and nothing is sent until you click.
-        Readings longer than 6,000 characters send only the beginning.
-        Do not summarize a document you are not allowed to send to a third-party AI service.
-      </p>
-    </div>
-
-    <p class="note">
-      The PDF stays on this computer. The page reads its text in the browser with PDF.js.
-      A scanned PDF is a picture of the page, so this version cannot pull words out of it.
-      Loading the page needs an internet connection so PDF.js can download.
-      Playback events go to PostHog. The PDF text, file name, and summary text do not.
-    </p>
-
+    <p class="fine">Playback counts go to PostHog. The PDF text, file name, summary, narration script, and quiz text do not. A scanned PDF has no extractable words.</p>
     <div class="replay-bar" id="replay-bar">
-      <p id="replay-text">FlashRead can record this visit for product testing. The current word and the AI summary are masked. Recording stays off until you allow it.</p>
+      <p id="replay-text">FlashRead can record this visit for product testing. Document text, summaries, and quizzes are masked. Recording stays off until you allow it.</p>
       <button id="replay-allow" type="button">Allow recording</button>
       <button id="replay-decline" type="button">Not now</button>
     </div>
-  </main>
+  </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script>
-    // PDF.js turns the PDF into text. The rest of this script is the reader.
     pdfjsLib.GlobalWorkerOptions.workerSrc =
       "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
+    var TEXT_LIMIT = 48000;
     var pdfInput = document.querySelector("#pdf-input");
-    var statusEl = document.querySelector("#status");
-    var wordEl = document.querySelector("#word");
-    var progressEl = document.querySelector("#progress");
+    var dropzone = document.querySelector("#dropzone");
+    var dropTitle = document.querySelector("#drop-title");
+    var homeStatus = document.querySelector("#home-status");
+    var browseBtn = document.querySelector("#browse");
+    var viewHome = document.querySelector("#view-home");
+    var workspace = document.querySelector("#workspace");
+    var viewRead = document.querySelector("#view-read");
+    var viewSummary = document.querySelector("#view-summary");
+    var viewPodcast = document.querySelector("#view-podcast");
+    var viewQuiz = document.querySelector("#view-quiz");
+    var wordPre = document.querySelector("#word-pre");
+    var wordOrp = document.querySelector("#word-orp");
+    var wordPost = document.querySelector("#word-post");
+    var scrub = document.querySelector("#scrub");
+    var statPercent = document.querySelector("#stat-percent");
+    var statPosition = document.querySelector("#stat-position");
+    var statPage = document.querySelector("#stat-page");
+    var statRemaining = document.querySelector("#stat-remaining");
     var playBtn = document.querySelector("#play");
     var pauseBtn = document.querySelector("#pause");
     var rewindBtn = document.querySelector("#rewind");
     var speedInput = document.querySelector("#speed");
     var speedValue = document.querySelector("#speed-value");
+    var fontInput = document.querySelector("#font-size");
+    var fontValue = document.querySelector("#font-value");
+    var sentencePause = document.querySelector("#sentence-pause");
+    var statusEl = document.querySelector("#status");
+    var readerKicker = document.querySelector("#reader-kicker");
+    var contextEl = document.querySelector("#context");
+    var toggleContext = document.querySelector("#toggle-context");
     var summarizeBtn = document.querySelector("#summarize");
+    var speedSummaryBtn = document.querySelector("#speed-summary");
     var summaryEl = document.querySelector("#summary");
+    var summaryNote = document.querySelector("#summary-note");
+    var podcastBtn = document.querySelector("#make-podcast");
+    var podcastStatus = document.querySelector("#podcast-status");
+    var player = document.querySelector("#player");
+    var quizProgress = document.querySelector("#quiz-progress");
+    var quizQuestion = document.querySelector("#quiz-question");
+    var quizChoices = document.querySelector("#quiz-choices");
+    var quizExplain = document.querySelector("#quiz-explain");
+    var quizScore = document.querySelector("#quiz-score");
+    var quizNext = document.querySelector("#quiz-next");
+    var quizRetry = document.querySelector("#quiz-retry");
+    var quizAnother = document.querySelector("#quiz-another");
     var replayText = document.querySelector("#replay-text");
     var replayAllow = document.querySelector("#replay-allow");
     var replayDecline = document.querySelector("#replay-decline");
 
-    var words = [];
-    var pageCount = 0;
-    var index = 0;
-    var playing = false;
-    var timerId = null;
-    var summarizing = false;
+    var doc = { tokens: [], pageCount: 0 };
+    var summaryTokens = [];
+    var places = { document: 0, summary: 0 };
+    var activeSource = "document";
+    var currentMode = "home";
+    var pendingMode = null;
+    var quizReturn = "read";
+    var reader = { tokens: [], index: 0, playing: false, timer: null };
+    var scrubbing = false;
+    var contextVisible = true;
+    var busy = { summary: false, podcast: false, quiz: false };
+    var quiz = null;
+    var choiceButtons = document.querySelectorAll(".choice");
+    var modeButtons = document.querySelectorAll(".modes button");
 
     function track(name, props) {
       if (!window.posthog) return;
       var data = { page_type: "local_app" };
       if (props) {
-        Object.keys(props).forEach(function (key) {
-          data[key] = props[key];
-        });
+        Object.keys(props).forEach(function (key) { data[key] = props[key]; });
       }
       posthog.capture(name, data);
     }
 
-    function setStatus(message) {
-      statusEl.textContent = message;
+    function modeKey(mode) {
+      if (mode === "read") return "speed_read";
+      return mode;
     }
 
-    // 300 words per minute means one word every 200 milliseconds.
-    function delayMs() {
-      return 60000 / Number(speedInput.value);
+    function setHomeStatus(message) { homeStatus.textContent = message; }
+    function setStatus(message) { statusEl.textContent = message; }
+
+    function paintModes() {
+      var selected = currentMode;
+      if (currentMode === "quiz") selected = quizReturn;
+      if (currentMode === "read" && activeSource === "summary") selected = "summary";
+      for (var i = 0; i < choiceButtons.length; i++) {
+        var mode = choiceButtons[i].getAttribute("data-mode");
+        choiceButtons[i].setAttribute("aria-pressed", mode === selected || mode === pendingMode ? "true" : "false");
+      }
+      for (var j = 0; j < modeButtons.length; j++) {
+        var navMode = modeButtons[j].getAttribute("data-mode");
+        modeButtons[j].setAttribute("aria-pressed", navMode === selected ? "true" : "false");
+      }
     }
 
-    function showCurrentWord() {
-      wordEl.textContent = words[index];
-      progressEl.textContent = "Word " + (index + 1) + " of " + words.length;
+    function showView(name) {
+      currentMode = name;
+      viewHome.hidden = name !== "home";
+      workspace.hidden = name === "home";
+      viewRead.hidden = name !== "read";
+      viewSummary.hidden = name !== "summary";
+      viewPodcast.hidden = name !== "podcast";
+      viewQuiz.hidden = name !== "quiz";
+      if (name !== "read") pause();
+      if (name !== "podcast" && player && !player.paused) player.pause();
+      paintModes();
+    }
+
+    function orpIndex(word) {
+      var n = word.length;
+      if (n <= 1) return 0;
+      if (n <= 5) return 1;
+      if (n <= 9) return 2;
+      if (n <= 13) return 3;
+      return 4;
+    }
+
+    function renderWord(text) {
+      var at = orpIndex(text);
+      wordPre.textContent = text.slice(0, at);
+      wordOrp.textContent = text.charAt(at);
+      wordPost.textContent = text.slice(at + 1);
+    }
+
+    function formatRemaining(wordsLeft, wpm) {
+      var seconds = Math.round(wordsLeft * 60 / wpm);
+      if (seconds < 0) seconds = 0;
+      var minutes = Math.floor(seconds / 60);
+      var rest = seconds % 60;
+      return minutes + ":" + (rest < 10 ? "0" : "") + rest + " left";
+    }
+
+    function renderContext() {
+      while (contextEl.firstChild) contextEl.removeChild(contextEl.firstChild);
+      var tokens = reader.tokens;
+      if (!tokens.length) return;
+      var start = Math.max(0, reader.index - 35);
+      var end = Math.min(tokens.length, reader.index + 36);
+      var current = null;
+      for (var n = start; n < end; n++) {
+        var span = document.createElement("span");
+        span.textContent = tokens[n].text + " ";
+        if (n === reader.index) {
+          span.className = "current";
+          current = span;
+        }
+        contextEl.appendChild(span);
+      }
+      if (!current) return;
+      var above = current.offsetTop < contextEl.scrollTop;
+      var below = current.offsetTop > contextEl.scrollTop + contextEl.clientHeight - 28;
+      if (above || below) {
+        contextEl.scrollTop = current.offsetTop - contextEl.clientHeight / 2;
+      }
+    }
+
+    function renderReader() {
+      var tokens = reader.tokens;
+      if (!tokens.length) return;
+      if (reader.index < 0) reader.index = 0;
+      if (reader.index > tokens.length - 1) reader.index = tokens.length - 1;
+      places[activeSource] = reader.index;
+      var token = tokens[reader.index];
+      renderWord(token.text);
+      var pct = Math.round(((reader.index + 1) / tokens.length) * 100);
+      statPercent.textContent = pct + "%";
+      statPosition.textContent = "Word " + (reader.index + 1) + " of " + tokens.length;
+      if (activeSource === "summary") {
+        readerKicker.textContent = "Reading the summary";
+        statPage.textContent = "Summary";
+      } else {
+        readerKicker.textContent = "Reading the document";
+        statPage.textContent = token.page ? ("Page " + token.page + " of " + doc.pageCount) : "Page unavailable";
+      }
+      statRemaining.textContent = formatRemaining(tokens.length - reader.index, Number(speedInput.value));
+      scrub.min = "0";
+      scrub.max = String(Math.max(tokens.length - 1, 0));
+      if (!scrubbing) scrub.value = String(reader.index);
+      renderContext();
+      refreshControls();
     }
 
     function refreshControls() {
-      var hasWords = words.length > 0;
-      playBtn.disabled = !hasWords || playing;
-      pauseBtn.disabled = !hasWords || !playing;
-      rewindBtn.disabled = !hasWords;
-      speedInput.disabled = !hasWords;
-      summarizeBtn.disabled = !hasWords || summarizing;
+      var has = reader.tokens.length > 0;
+      playBtn.disabled = !has || reader.playing;
+      pauseBtn.disabled = !has || !reader.playing;
+      rewindBtn.disabled = !has;
+      scrub.disabled = !has;
+      speedInput.disabled = !has;
     }
 
     function stopTimer() {
-      if (timerId !== null) {
-        clearTimeout(timerId);
-        timerId = null;
+      if (reader.timer !== null) {
+        clearTimeout(reader.timer);
+        reader.timer = null;
       }
+    }
+
+    function delayFor(token) {
+      var ms = 60000 / Number(speedInput.value);
+      if (sentencePause.checked && token && /[.!?]["')\]]*$/.test(token.text)) ms += 280;
+      return ms;
     }
 
     function scheduleAdvance() {
       stopTimer();
-      timerId = setTimeout(function () {
-        timerId = null;
-        if (!playing) {
-          return;
-        }
-        if (index >= words.length - 1) {
-          playing = false;
+      reader.timer = setTimeout(function () {
+        reader.timer = null;
+        if (!reader.playing) return;
+        if (reader.index >= reader.tokens.length - 1) {
+          reader.playing = false;
           refreshControls();
-          setStatus("End of the document. Press Play to start again.");
+          setStatus(activeSource === "summary" ? "End of the summary." : "End of the document.");
           track("reading_completed", {
             wpm: Number(speedInput.value),
-            word_count: words.length
+            word_count: reader.tokens.length,
+            source: activeSource,
+            mode: "speed_read"
           });
           return;
         }
-        index += 1;
-        showCurrentWord();
+        reader.index += 1;
+        renderReader();
         scheduleAdvance();
-      }, delayMs());
+      }, delayFor(reader.tokens[reader.index]));
     }
 
     function play() {
-      if (words.length === 0 || playing) {
-        return;
+      if (!reader.tokens.length || reader.playing) return;
+      if (reader.index >= reader.tokens.length - 1) {
+        reader.index = 0;
+        renderReader();
       }
-      if (index >= words.length - 1) {
-        index = 0;
-        showCurrentWord();
-      }
-      playing = true;
+      reader.playing = true;
       refreshControls();
       setStatus("Playing at " + speedInput.value + " words per minute.");
       track("reading_started", {
         wpm: Number(speedInput.value),
-        word_count: words.length
+        word_count: reader.tokens.length,
+        source: activeSource,
+        mode: "speed_read"
       });
       scheduleAdvance();
     }
 
     function pause() {
-      var wasPlaying = playing;
-      playing = false;
+      var wasPlaying = reader.playing;
+      reader.playing = false;
       stopTimer();
       refreshControls();
-      if (words.length > 0) {
-        setStatus("Paused.");
-      }
       if (wasPlaying) {
-        track("reading_paused", { wpm: Number(speedInput.value) });
+        setStatus("Paused.");
+        track("reading_paused", {
+          wpm: Number(speedInput.value),
+          source: activeSource,
+          mode: "speed_read"
+        });
       }
     }
 
-    function rewind() {
-      if (words.length === 0) {
-        return;
-      }
-      var previous = index;
-      index = Math.max(0, index - 10);
-      var moved = previous - index;
-      showCurrentWord();
+    function moveBy(amount) {
+      if (!reader.tokens.length) return;
+      var previous = reader.index;
+      reader.index = Math.max(0, Math.min(reader.tokens.length - 1, reader.index + amount));
+      renderReader();
+      var moved = Math.abs(reader.index - previous);
       if (moved === 0) {
-        setStatus("Already at the first word.");
-      } else if (playing) {
-        setStatus("Rewound " + moved + " words.");
+        setStatus(amount < 0 ? "Already at the first word." : "Already at the last word.");
       } else {
-        setStatus("Paused. Rewound " + moved + " words.");
+        setStatus((reader.playing ? "Playing. " : "Paused. ") + (amount < 0 ? "Rewound " : "Forward ") + moved + " words.");
       }
-      if (playing) {
-        scheduleAdvance();
-      }
+      if (reader.playing) scheduleAdvance();
     }
 
-    function summarize() {
-      if (words.length === 0 || summarizing) {
+    function showRead(source) {
+      pause();
+      activeSource = source === "summary" ? "summary" : "document";
+      reader.tokens = activeSource === "summary" ? summaryTokens : doc.tokens;
+      reader.index = places[activeSource] || 0;
+      showView("read");
+      renderReader();
+      setStatus(activeSource === "summary" ? "Ready to read the summary." : "Ready.");
+    }
+
+    function selectMode(mode) {
+      if (!doc.tokens.length) {
+        pendingMode = mode;
+        showView("home");
+        setHomeStatus("Add a text PDF first. FlashRead will open this mode when it is ready.");
+        paintModes();
+        dropzone.focus();
         return;
       }
-      summarizing = true;
-      refreshControls();
-      summaryEl.textContent = "Summarizing…";
+      if (mode === "summary" && currentMode === "summary") return;
+      if (mode === "podcast" && currentMode === "podcast") return;
+      if (mode === "read" && currentMode === "read" && activeSource === "document") return;
+      pendingMode = null;
+      track("mode_selected", { mode: modeKey(mode) });
+      if (mode === "read") showRead("document");
+      else showView(mode);
+    }
 
-      var fullText = words.join(" ");
-      fetch("/api/summarize", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: fullText.slice(0, 6000) })
-      }).then(function (response) {
-        return response.json().then(function (data) {
-          return { ok: response.ok, data: data };
-        });
-      }).then(function (result) {
-        if (!result.ok || !result.data || !result.data.summary) {
-          summaryEl.textContent = (result.data && result.data.error) || "The summary could not be created.";
-          return;
-        }
-        summaryEl.textContent = result.data.summary;
-        if (result.data.truncated) {
-          summaryEl.textContent += " (Only the first 6,000 characters were sent.)";
-        }
-        track("ai_summary_completed", {
-          model: result.data.model,
-          characters_sent: result.data.characters_sent,
-          truncated: !!result.data.truncated
-        });
-      }).catch(function () {
-        summaryEl.textContent = "The summary could not be created. Open FlashRead from the local server and try again.";
-      }).then(function () {
-        summarizing = false;
-        refreshControls();
+    function wordsFromText(text) {
+      return text.split(/\s+/).filter(function (word) { return word.length > 0; }).map(function (word) {
+        return { text: word, page: null };
       });
     }
 
-    function extractWords(buffer) {
+    function documentText() {
+      var parts = [];
+      for (var i = 0; i < doc.tokens.length; i++) parts.push(doc.tokens[i].text);
+      return parts.join(" ");
+    }
+
+    function clipText(text) {
+      if (text.length <= TEXT_LIMIT) return { text: text, truncated: false };
+      return { text: text.slice(0, TEXT_LIMIT), truncated: true };
+    }
+
+    function postJson(url, text) {
+      return fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: text })
+      }).then(function (response) {
+        return response.json().then(function (data) {
+          return { ok: response.ok, data: data };
+        }, function () {
+          return { ok: false, data: { error: "The server returned an unreadable response." } };
+        });
+      });
+    }
+
+    function extractDocument(buffer) {
       return pdfjsLib.getDocument({ data: buffer }).promise.then(function (pdf) {
         var pageNumber = 1;
-        var chunks = [];
-        var pages = pdf.numPages;
-
+        var tokens = [];
         function readPage() {
           if (pageNumber > pdf.numPages) {
-            return {
-              words: chunks.join("\n").split(/\s+/).filter(function (word) {
-                return word.length > 0;
-              }),
-              pageCount: pages
-            };
+            return { tokens: tokens, pageCount: pdf.numPages };
           }
-          return pdf.getPage(pageNumber).then(function (page) {
+          var currentPage = pageNumber;
+          return pdf.getPage(currentPage).then(function (page) {
             return page.getTextContent().then(function (content) {
-              var pageText = "";
               content.items.forEach(function (item) {
-                if (!item.str) {
-                  return;
-                }
-                pageText += item.str;
-                pageText += item.hasEOL ? "\n" : " ";
+                if (!item.str) return;
+                item.str.split(/\s+/).forEach(function (part) {
+                  if (part) tokens.push({ text: part, page: currentPage });
+                });
               });
-              chunks.push(pageText);
               pageNumber += 1;
               return readPage();
             });
           });
         }
-
         return readPage();
       });
     }
 
+    function resetDerived() {
+      summaryTokens = [];
+      summaryEl.textContent = "";
+      summaryNote.textContent = "";
+      speedSummaryBtn.disabled = true;
+      podcastStatus.textContent = "";
+      player.pause();
+      player.removeAttribute("src");
+      player.load();
+      quiz = null;
+      places.summary = 0;
+      clearQuizView();
+    }
+
+    function loadFile(file) {
+      if (!file) return;
+      var isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name || "");
+      if (!isPdf) {
+        setHomeStatus("Choose a PDF file.");
+        return;
+      }
+      var resume = currentMode;
+      pause();
+      doc = { tokens: [], pageCount: 0 };
+      places = { document: 0, summary: 0 };
+      resetDerived();
+      setHomeStatus("Reading the PDF…");
+      dropTitle.textContent = "Reading the PDF…";
+      file.arrayBuffer().then(function (buffer) {
+        return extractDocument(buffer);
+      }).then(function (extracted) {
+        if (!extracted.tokens.length) {
+          dropzone.classList.remove("ready");
+          dropTitle.textContent = "Drop a text-based PDF here";
+          setHomeStatus("No words found. Scanned pages keep their words inside a picture.");
+          showView("home");
+          return;
+        }
+        doc = extracted;
+        dropzone.classList.add("ready");
+        dropTitle.textContent = "PDF ready";
+        setHomeStatus(extracted.tokens.length + " words across " + extracted.pageCount + " page" + (extracted.pageCount === 1 ? "" : "s") + ". Choose a way to learn it, or replace the PDF.");
+        track("pdf_uploaded", { word_count: extracted.tokens.length, page_count: extracted.pageCount });
+        var next = pendingMode;
+        pendingMode = null;
+        if (next) selectMode(next);
+        else if (resume === "read" || resume === "summary" || resume === "podcast" || resume === "quiz") {
+          currentMode = "home";
+          selectMode(resume === "quiz" ? quizReturn : resume);
+        } else showView("home");
+      }).catch(function () {
+        dropzone.classList.remove("ready");
+        dropTitle.textContent = "Drop a text-based PDF here";
+        setHomeStatus("Could not read that PDF. Try another text-based PDF.");
+        showView("home");
+      });
+    }
+
+    function generateSummary() {
+      if (busy.summary || !doc.tokens.length) return;
+      busy.summary = true;
+      summarizeBtn.disabled = true;
+      summaryEl.textContent = "Generating summary…";
+      summaryNote.textContent = "";
+      var packed = clipText(documentText());
+      postJson("/api/summarize", packed.text).then(function (result) {
+        if (!result.ok || !result.data || !result.data.summary) {
+          summaryEl.textContent = (result.data && result.data.error) || "The summary could not be created.";
+          return;
+        }
+        summaryEl.textContent = result.data.summary;
+        summaryTokens = wordsFromText(result.data.summary);
+        places.summary = 0;
+        speedSummaryBtn.disabled = summaryTokens.length === 0;
+        if (result.data.truncated || packed.truncated) {
+          summaryNote.textContent = "This summary covers the beginning of the document. The rest was not sent.";
+        }
+        track("summary_generated", {
+          model: result.data.model,
+          characters_sent: result.data.characters_sent,
+          truncated: !!(result.data.truncated || packed.truncated),
+          mode: "summary"
+        });
+        track("ai_summary_completed", {
+          model: result.data.model,
+          characters_sent: result.data.characters_sent,
+          truncated: !!(result.data.truncated || packed.truncated)
+        });
+      }).catch(function () {
+        summaryEl.textContent = "The summary could not be created. Open FlashRead from the local server and try again.";
+      }).then(function () {
+        busy.summary = false;
+        summarizeBtn.disabled = false;
+      });
+    }
+
+    function generatePodcast() {
+      if (busy.podcast || !doc.tokens.length) return;
+      busy.podcast = true;
+      podcastBtn.disabled = true;
+      podcastStatus.textContent = "Writing the narration and creating an audio file on this computer. This can take a little while.";
+      var packed = clipText(documentText());
+      postJson("/api/podcast", packed.text).then(function (result) {
+        if (!result.ok || !result.data || !result.data.audio_url) {
+          podcastStatus.textContent = (result.data && result.data.error) || "The narration could not be created.";
+          return;
+        }
+        player.src = result.data.audio_url;
+        podcastStatus.textContent = "Narration ready. The script came from the AI model. The voice is Windows text-to-speech on this computer, saved as an audio file.";
+        if (result.data.truncated || packed.truncated) {
+          podcastStatus.textContent += " The audio covers the beginning of the document.";
+        }
+        track("podcast_generated", {
+          model: result.data.model,
+          characters_sent: result.data.characters_sent,
+          script_characters: result.data.script_characters,
+          audio_bytes: result.data.audio_bytes,
+          voice: result.data.voice,
+          truncated: !!(result.data.truncated || packed.truncated),
+          mode: "podcast"
+        });
+      }).catch(function () {
+        podcastStatus.textContent = "The narration could not be created. Open FlashRead from the local server and try again.";
+      }).then(function () {
+        busy.podcast = false;
+        podcastBtn.disabled = false;
+      });
+    }
+
+    function clearQuizView() {
+      quizProgress.textContent = "";
+      quizQuestion.textContent = "";
+      quizExplain.textContent = "";
+      quizScore.textContent = "";
+      while (quizChoices.firstChild) quizChoices.removeChild(quizChoices.firstChild);
+      quizNext.hidden = true;
+      quizRetry.hidden = true;
+      quizAnother.hidden = true;
+    }
+
+    function quizLooksValid(data) {
+      if (!data || !data.questions || data.questions.length < 5) return false;
+      for (var i = 0; i < 5; i++) {
+        var item = data.questions[i];
+        if (!item || !item.question || !item.choices || item.choices.length !== 4) return false;
+        if (item.answer !== 0 && item.answer !== 1 && item.answer !== 2 && item.answer !== 3) return false;
+      }
+      return true;
+    }
+
+    function renderQuizQuestion() {
+      var item = quiz.questions[quiz.pos];
+      quiz.locked = false;
+      quizProgress.textContent = "Question " + (quiz.pos + 1) + " of " + quiz.questions.length;
+      quizQuestion.textContent = item.question;
+      quizExplain.textContent = "";
+      quizScore.textContent = "";
+      quizNext.hidden = true;
+      while (quizChoices.firstChild) quizChoices.removeChild(quizChoices.firstChild);
+      for (var i = 0; i < item.choices.length; i++) {
+        var button = document.createElement("button");
+        button.type = "button";
+        button.className = "quiz-choice";
+        button.textContent = item.choices[i];
+        button.addEventListener("click", (function (choice) {
+          return function () { answerQuiz(choice); };
+        })(i));
+        quizChoices.appendChild(button);
+      }
+    }
+
+    function finishQuiz() {
+      var pct = Math.round((quiz.correct / quiz.questions.length) * 100);
+      quizScore.textContent = "You answered " + quiz.correct + " of " + quiz.questions.length + " correctly (" + pct + "%).";
+      quizRetry.hidden = false;
+      quizAnother.hidden = false;
+      if (!quiz.reported) {
+        quiz.reported = true;
+        track("quiz_completed", {
+          mode: modeKey(quizReturn),
+          score: quiz.correct,
+          question_count: quiz.questions.length,
+          percent: pct
+        });
+      }
+    }
+
+    function answerQuiz(choice) {
+      if (!quiz || quiz.locked) return;
+      quiz.locked = true;
+      var item = quiz.questions[quiz.pos];
+      var buttons = quizChoices.querySelectorAll("button");
+      for (var i = 0; i < buttons.length; i++) {
+        buttons[i].disabled = true;
+        if (i === item.answer) buttons[i].className = "quiz-choice right";
+        else if (i === choice) buttons[i].className = "quiz-choice wrong";
+      }
+      if (choice === item.answer) quiz.correct += 1;
+      quizExplain.textContent = item.explanation || "The highlighted choice is the one that matches the document.";
+      if (quiz.pos >= quiz.questions.length - 1) finishQuiz();
+      else quizNext.hidden = false;
+    }
+
+    function generateQuiz() {
+      if (busy.quiz || !doc.tokens.length) return;
+      busy.quiz = true;
+      clearQuizView();
+      quizProgress.textContent = "Writing questions from the document…";
+      var packed = clipText(documentText());
+      var fromMode = quizReturn;
+      postJson("/api/quiz", packed.text).then(function (result) {
+        if (!result.ok || !quizLooksValid(result.data)) {
+          quizProgress.textContent = (result.data && result.data.error) || "The quiz could not be created.";
+          return;
+        }
+        quiz = {
+          questions: result.data.questions.slice(0, 5),
+          pos: 0,
+          correct: 0,
+          locked: false,
+          reported: false,
+          truncated: !!(result.data.truncated || packed.truncated)
+        };
+        if (quiz.truncated) {
+          quizScore.textContent = "These questions use the beginning of the document.";
+        }
+        track("quiz_started", {
+          mode: modeKey(fromMode),
+          question_count: quiz.questions.length,
+          truncated: quiz.truncated
+        });
+        renderQuizQuestion();
+        if (quiz.truncated) {
+          quizScore.textContent = "These questions use the beginning of the document.";
+        }
+      }).catch(function () {
+        quizProgress.textContent = "The quiz could not be created. Open FlashRead from the local server and try again.";
+      }).then(function () {
+        busy.quiz = false;
+      });
+    }
+
+    function openQuiz() {
+      quizReturn = currentMode === "quiz" ? quizReturn : currentMode;
+      showView("quiz");
+      generateQuiz();
+    }
+
+    browseBtn.addEventListener("click", function (event) {
+      event.stopPropagation();
+      pdfInput.click();
+    });
+    dropzone.addEventListener("click", function () { pdfInput.click(); });
+    dropzone.addEventListener("keydown", function (event) {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        pdfInput.click();
+      }
+    });
+    pdfInput.addEventListener("change", function () {
+      var file = pdfInput.files && pdfInput.files[0];
+      pdfInput.value = "";
+      loadFile(file);
+    });
+    dropzone.addEventListener("dragover", function (event) {
+      event.preventDefault();
+      dropzone.classList.add("drag");
+    });
+    dropzone.addEventListener("dragleave", function () { dropzone.classList.remove("drag"); });
+    dropzone.addEventListener("drop", function (event) {
+      event.preventDefault();
+      dropzone.classList.remove("drag");
+      var file = event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0];
+      loadFile(file);
+    });
+
+    for (var c = 0; c < choiceButtons.length; c++) {
+      choiceButtons[c].addEventListener("click", function () {
+        selectMode(this.getAttribute("data-mode"));
+      });
+    }
+    for (var m = 0; m < modeButtons.length; m++) {
+      modeButtons[m].addEventListener("click", function () {
+        selectMode(this.getAttribute("data-mode"));
+      });
+    }
+    document.querySelector("#go-home").addEventListener("click", function () {
+      pendingMode = null;
+      showView("home");
+    });
+
+    playBtn.addEventListener("click", play);
+    pauseBtn.addEventListener("click", pause);
+    rewindBtn.addEventListener("click", function () { moveBy(-10); });
+    document.querySelector("#quiz-from-read").addEventListener("click", openQuiz);
+    document.querySelector("#quiz-from-summary").addEventListener("click", openQuiz);
+    document.querySelector("#quiz-from-podcast").addEventListener("click", openQuiz);
+    summarizeBtn.addEventListener("click", generateSummary);
+    speedSummaryBtn.addEventListener("click", function () {
+      if (!summaryTokens.length) return;
+      showRead("summary");
+    });
+    podcastBtn.addEventListener("click", generatePodcast);
+    quizNext.addEventListener("click", function () {
+      if (!quiz) return;
+      quiz.pos += 1;
+      renderQuizQuestion();
+    });
+    quizRetry.addEventListener("click", function () {
+      if (!quiz) return;
+      quiz.pos = 0;
+      quiz.correct = 0;
+      renderQuizQuestion();
+    });
+    quizAnother.addEventListener("click", generateQuiz);
+    document.querySelector("#quiz-back").addEventListener("click", function () {
+      if (quizReturn === "read") showRead(activeSource);
+      else showView(quizReturn || "read");
+    });
+
+    var rateButtons = document.querySelectorAll("[data-rate]");
+    for (var r = 0; r < rateButtons.length; r++) {
+      rateButtons[r].addEventListener("click", function () {
+        player.playbackRate = Number(this.getAttribute("data-rate"));
+      });
+    }
+
+    speedInput.addEventListener("input", function () {
+      speedValue.textContent = speedInput.value;
+      if (reader.tokens.length) renderReader();
+      if (reader.playing) scheduleAdvance();
+    });
+    speedInput.addEventListener("change", function () {
+      if (!reader.tokens.length) return;
+      track("reading_speed_changed", {
+        wpm: Number(speedInput.value),
+        source: activeSource,
+        mode: "speed_read"
+      });
+    });
+    fontInput.addEventListener("input", function () {
+      fontValue.textContent = fontInput.value;
+      document.documentElement.style.setProperty("--word-size", fontInput.value + "px");
+    });
+    scrub.addEventListener("pointerdown", function () { scrubbing = true; });
+    scrub.addEventListener("pointerup", function () { scrubbing = false; });
+    scrub.addEventListener("change", function () { scrubbing = false; });
+    scrub.addEventListener("input", function () {
+      if (!reader.tokens.length) return;
+      reader.index = Number(scrub.value);
+      renderReader();
+      if (reader.playing) scheduleAdvance();
+      else setStatus("Paused.");
+    });
+    toggleContext.addEventListener("click", function () {
+      contextVisible = !contextVisible;
+      contextEl.hidden = !contextVisible;
+      toggleContext.textContent = contextVisible ? "Hide surrounding text" : "Show surrounding text";
+    });
+
+    document.addEventListener("keydown", function (event) {
+      if (currentMode !== "read") return;
+      var tag = event.target && event.target.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if (event.key === " " || event.code === "Space") {
+        event.preventDefault();
+        if (reader.playing) pause();
+        else play();
+      } else if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        moveBy(-10);
+      } else if (event.key === "ArrowRight") {
+        event.preventDefault();
+        moveBy(10);
+      }
+    });
+
     window.flashreadReplaySync = function () {
       var choice = localStorage.getItem("flashread-replay");
-      if (choice === "on" && window.posthog) {
-        posthog.startSessionRecording();
-      }
-      if (choice === "off" && window.posthog && posthog.stopSessionRecording) {
-        posthog.stopSessionRecording();
-      }
+      if (choice === "on" && window.posthog) posthog.startSessionRecording();
+      if (choice === "off" && window.posthog && posthog.stopSessionRecording) posthog.stopSessionRecording();
       if (choice === "on") {
-        replayText.textContent = "This visit is being recorded for product testing. The current word and the AI summary are masked.";
+        replayText.textContent = "This visit is being recorded for product testing. Document text, summaries, and quizzes are masked.";
         replayAllow.hidden = true;
         replayDecline.hidden = false;
         replayDecline.textContent = "Stop recording";
@@ -476,81 +1214,20 @@
         replayAllow.textContent = "Allow recording";
         replayDecline.hidden = true;
       } else {
-        replayText.textContent = "FlashRead can record this visit for product testing. The current word and the AI summary are masked. Recording stays off until you allow it.";
+        replayText.textContent = "FlashRead can record this visit for product testing. Document text, summaries, and quizzes are masked. Recording stays off until you allow it.";
         replayAllow.hidden = false;
         replayAllow.textContent = "Allow recording";
         replayDecline.hidden = false;
         replayDecline.textContent = "Not now";
       }
     };
-
     replayAllow.addEventListener("click", function () {
       localStorage.setItem("flashread-replay", "on");
       window.flashreadReplaySync();
     });
-
     replayDecline.addEventListener("click", function () {
       localStorage.setItem("flashread-replay", "off");
       window.flashreadReplaySync();
-    });
-
-    playBtn.addEventListener("click", play);
-    pauseBtn.addEventListener("click", pause);
-    rewindBtn.addEventListener("click", rewind);
-    summarizeBtn.addEventListener("click", summarize);
-
-    speedInput.addEventListener("input", function () {
-      speedValue.textContent = speedInput.value;
-      if (playing) {
-        setStatus("Playing at " + speedInput.value + " words per minute.");
-        scheduleAdvance();
-      }
-    });
-
-    speedInput.addEventListener("change", function () {
-      if (words.length === 0) return;
-      track("reading_speed_changed", { wpm: Number(speedInput.value) });
-    });
-
-    pdfInput.addEventListener("change", function () {
-      var file = pdfInput.files && pdfInput.files[0];
-      pdfInput.value = "";
-      if (!file) {
-        return;
-      }
-
-      pause();
-      words = [];
-      pageCount = 0;
-      index = 0;
-      summaryEl.textContent = "";
-      refreshControls();
-      wordEl.textContent = "…";
-      progressEl.textContent = "";
-      setStatus("Reading the PDF…");
-
-      file.arrayBuffer().then(function (buffer) {
-        return extractWords(buffer);
-      }).then(function (extracted) {
-        if (!extracted.words || extracted.words.length === 0) {
-          wordEl.textContent = "—";
-          setStatus("No words found. Choose a text-based PDF. Scanned pages keep their words inside a picture.");
-          return;
-        }
-        words = extracted.words;
-        pageCount = extracted.pageCount;
-        index = 0;
-        showCurrentWord();
-        refreshControls();
-        setStatus("Ready. " + words.length + " words.");
-        track("pdf_uploaded", {
-          word_count: words.length,
-          page_count: pageCount
-        });
-      }).catch(function () {
-        wordEl.textContent = "—";
-        setStatus("Could not read that PDF. Try another text-based PDF.");
-      });
     });
 
     refreshControls();

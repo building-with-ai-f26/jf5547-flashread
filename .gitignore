@@ -21,6 +21,9 @@ __pycache__/
 *.pyc
 .pytest_cache/
 
+# Local narration WAV files created by app/serve.ps1
+app/narration/
+
 # Build Outputs & OS Files
 dist/
 build/
