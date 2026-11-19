@@ -5,7 +5,7 @@
 - **Builder:** John Fennell (`@jf5547`)
 - **Pod:** Pod 4
 - **Product Page & Living PRD:** https://building-with-ai-f26.github.io/jf5547-flashread/ (live once GitHub Pages is deployed from `main` → `/docs`)
-- **App:** runs locally through Week 4; add a cloud URL in Build 5.
+- **App:** speed reading is public at https://building-with-ai-f26.github.io/jf5547-flashread/demo/ . Summary, quiz, and podcast run locally through `app/serve.ps1`. A hosted AI service is still a Build 5 item.
 
 ## What FlashRead does
 
@@ -15,7 +15,7 @@ Upload a text-based PDF and choose **Speed Read PDF**, **Summarize PDF**, or **P
 
 ![FlashRead Build 1 prototype](docs/assets/flashread-build1.png)
 
-**Limitations:** scanned PDFs (images of text) produce no words. Multi-column papers may extract in a messy order. Loading the page needs internet for PDF.js. Your place in a document is saved in this browser only, as a position number, and is restored when you upload the same PDF again. A live summary, quiz, or narration needs an OpenRouter key. The narration voice is the Windows voice on this computer.
+**Limitations:** scanned PDFs (images of text) produce no words. Multi-column papers may extract in a messy order. Loading the page needs internet for PDF.js. Your place in a document is saved in this browser only, as a position number, and is restored when you upload the same PDF again. A live summary, quiz, or narration needs an OpenRouter key on the local server. The public demo can speed-read only. The narration voice is the Windows voice on this computer.
 
 ## Run FlashRead on Windows
 
@@ -27,7 +27,7 @@ Upload a text-based PDF and choose **Speed Read PDF**, **Summarize PDF**, or **P
    powershell -ExecutionPolicy Bypass -File app\serve.ps1
    ```
 3. Your browser opens `http://localhost:8000`. If it doesn't, open that address yourself.
-4. Click **Choose a PDF**, pick a text-based PDF, then press **Play**.
+4. Click **Browse**, pick a text-based PDF, choose **Speed Read PDF**, then press **Play**. **Hide page** turns the small page off.
 5. Optional AI: copy `.env.example` to `.env`, set `OPENROUTER_API_KEY`, restart the server, then use **Generate Summary**, **Generate Podcast**, or **Test My Understanding**. Without a key, those buttons explain the setup and speed reading still works.
 6. When finished, click in the terminal and press **Ctrl+C** to stop the server.
 

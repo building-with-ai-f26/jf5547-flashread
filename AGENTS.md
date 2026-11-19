@@ -3,7 +3,7 @@
 > Give this file to your coding agent and check that it is using these instructions. Keep the stack, commands, and ground rules current.
 
 ## 1. Project Overview
-- **What this repo builds:** FlashRead, a local web app for a text-based academic PDF. After one upload the student can speed-read the document, generate an AI summary and speed-read that, or play a short local narration. Each mode can request a five-question quiz from the original text. Speed reading keeps play, pause, rewind 10 words, a scrubber, and a 150–600 WPM slider, and shows percent, page, time left, and surrounding text.
+- **What this repo builds:** FlashRead, a web app for a text-based academic PDF. After one upload the student can speed-read the document, generate an AI summary and speed-read that, or play a short local narration. Each mode can request a five-question quiz from the original text. Speed reading keeps play, pause, rewind 10 words, a scrubber, and a 150–600 WPM slider, and shows percent, page, time left, surrounding text, and a small page of the current PDF page with the current word highlighted. Speed reading is also published at `docs/demo/`. Summary, quiz, and podcast stay on the local server.
 - **Primary user & core workflow:** NYU Stern MBA students with long assigned readings. The living PRD is in `docs/index.html`.
 - **Tech stack:** `app/index.html` plus PDF.js 3.11.174 from the cdnjs CDN. `app/serve.ps1` serves it with built-in Windows PowerShell and, only after the summary button is clicked, calls OpenRouter. No database. The Product Page is the static file `docs/index.html`.
 
@@ -11,8 +11,13 @@
 - `app/index.html` — local reader.
 - `app/serve.ps1` — local server and the summary proxy.
 - `docs/index.html` — public Product Page, PRD, and build log.
+- `docs/demo/index.html` — public speed-reading copy of `app/index.html`. Recopy it when the reader changes. `docs/demo/media/home.mp4` is the homepage video.
 - `docs/assets/flashread-build1.png` — real screenshot of the Build 1 reader.
+- `docs/assets/flashread-build3.png` — real screenshot of the Build 3 reader on a 79-word PDF.
+- `docs/assets/flashread-home.png` — real screenshot of the video homepage.
+- `docs/assets/flashread-side-page.png` — real screenshot of the side page. The words in it were typed into the reader, not extracted from a PDF.
 - `docs/assets/posthog-events.png` — real PostHog Activity screenshot from Build 2.
+- `app/media/home.mp4` — homepage video served by the local app.
 - `AGENTS.md` — this file.
 - `README.md` — how to run the app.
 - `.env.example` — names the OpenRouter variable. The real `.env` is gitignored.
@@ -21,6 +26,7 @@
 ## 3. Setup and how to run
 - **Install dependencies:** none.
 - **Product Page:** https://building-with-ai-f26.github.io/jf5547-flashread/ after GitHub Pages deploys `main` / `docs`.
+- **Public speed reading:** https://building-with-ai-f26.github.io/jf5547-flashread/demo/ . Summary, quiz, and podcast on that page tell the visitor to use the local app.
 - **Local app:** from the repository root, run `powershell -ExecutionPolicy Bypass -File app\serve.ps1`, then open `http://localhost:8000`.
 - **Optional AI:** copy `.env.example` to `.env`, set `OPENROUTER_API_KEY`, restart the server, upload a text PDF, then click **Generate Summary**, **Generate Podcast**, or **Test My Understanding**. Speed reading works with no key.
 - **Deterministic tests:** none in the repo. Check the reader in a browser. The build notes are on the Product Page.
@@ -36,11 +42,11 @@ The buttons send extracted words to `POST /api/summarize`, `POST /api/quiz`, or 
 1. Start `app/serve.ps1` and open `http://localhost:8000`.
 2. Upload a text-based PDF. Choose Speed Read. Confirm percent, page, time left, Play, Pause, Rewind 10 words, the scrubber, and the speed slider. The current word should be highlighted in the surrounding text.
 3. Open Summary, Podcast, and Test My Understanding. With no key, expect the setup message and no invented summary, quiz, or audio. With a key, expect a summary that can be speed-read, a playable WAV labeled as the Windows voice, and five scored questions from the original PDF. The key must not appear on the page.
-4. Open the Product Page, click **See the Product**, and confirm it scrolls to the demo section.
+4. Open the Product Page, click **See the Product**, and confirm it opens the public speed-reading demo. Confirm the side page highlights the current word and that **Hide page** removes it.
 5. In PostHog, look for `$pageview` and `clicked_try_product` from the Product Page, and the reading events from the local app. Allow recording on a test visit before expecting a replay.
 
 ## 7. Known limitations
-Scanned or outlined PDFs produce no words. Multi-column pages may extract out of order. The reading position for a document is stored in this browser as a number and restored on the next upload of that same PDF. It is not sent to PostHog. Line-break hyphens are joined when the next fragment starts with a lowercase letter. The surrounding text marks the PDF page. PDF.js needs internet. The app is local only. A live summary, quiz, or narration is not on the Product Page until a real OpenRouter call succeeds. Podcast audio uses the Windows voice and is not a cloud podcast. Session replay is opt-in, and masked text will not show the reading, summary, or quiz.
+Scanned or outlined PDFs produce no words. Multi-column pages may extract out of order. The reading position for a document is stored in this browser as a number and restored on the next upload of that same PDF. It is not sent to PostHog. Line-break hyphens are joined when the next fragment starts with a lowercase letter. The surrounding text marks the PDF page. PDF.js needs internet. Speed reading is public at the demo URL above. Summary, quiz, and narration still need the local server and an OpenRouter key. A live model reply has not succeeded, so those results are not on the Product Page. Podcast audio uses the Windows voice and is not a cloud podcast. Session replay is opt-in, and masked text will not show the reading, summary, or quiz.
 
 ## 8. Non-Negotiable Engineering Rules
 1. **Plan before coding:** Before touching multiple files, propose a brief plan and wait for approval.
