@@ -1,6 +1,6 @@
 # FlashRead
 
-> **One-line pitch:** FlashRead helps university students read academic PDFs more efficiently through Rapid Serial Visual Presentation (RSVP), showing one word at a time at an adjustable speed.
+> **One-line pitch:** FlashRead lets a student upload one academic PDF and then speed-read it, summarize it, or listen to a short narration, with an optional quiz on the original text.
 
 - **Builder:** John Fennell (`@jf5547`)
 - **Pod:** Pod 4
@@ -9,13 +9,13 @@
 
 ## What FlashRead does
 
-Upload a text-based PDF and FlashRead extracts its text in your browser, then shows it one word at a time in a fixed spot. You can **Play**, **Pause**, **Rewind 10 words**, and set the speed from **150 to 600 words per minute**. The PDF file stays on your computer.
+Upload a text-based PDF and choose **Speed Read PDF**, **Summarize PDF**, or **PDF to Podcast**. The same upload can be used in each mode. Speed Read shows one word at a time, with **Play**, **Pause**, **Rewind 10 words**, a position scrubber, and speed from **150 to 600 words per minute**. It also shows percent complete, the PDF page, time left, and the surrounding text. The PDF file stays on your computer until you click an AI action.
 
-**Summarize PDF with AI** is optional. It sends the extracted words to OpenRouter only after you click, using a key kept in `.env`. The reader works without that key.
+**Generate Summary**, **Generate Podcast**, and **Test My Understanding** are optional. They send extracted text to OpenRouter only after you click, using a key kept in `.env`. Speed reading works without that key. Podcast audio is a WAV spoken by Windows on this computer after the script comes back. It is not a cloud podcast voice.
 
 ![FlashRead Build 1 prototype](docs/assets/flashread-build1.png)
 
-**Limitations:** scanned PDFs (images of text) produce no words. Multi-column papers may extract in a messy order. Loading the page needs internet for PDF.js. Your place is not saved when you close the tab.
+**Limitations:** scanned PDFs (images of text) produce no words. Multi-column papers may extract in a messy order. Loading the page needs internet for PDF.js. Your place is not saved when you close the tab. A live summary, quiz, or narration needs an OpenRouter key. The narration voice is the Windows voice on this computer.
 
 ## Run FlashRead on Windows
 
@@ -28,7 +28,7 @@ Upload a text-based PDF and FlashRead extracts its text in your browser, then sh
    ```
 3. Your browser opens `http://localhost:8000`. If it doesn't, open that address yourself.
 4. Click **Choose a PDF**, pick a text-based PDF, then press **Play**.
-5. Optional summary: copy `.env.example` to `.env`, set `OPENROUTER_API_KEY`, restart the server, then click **Summarize PDF with AI**.
+5. Optional AI: copy `.env.example` to `.env`, set `OPENROUTER_API_KEY`, restart the server, then use **Generate Summary**, **Generate Podcast**, or **Test My Understanding**. Without a key, those buttons explain the setup and speed reading still works.
 6. When finished, click in the terminal and press **Ctrl+C** to stop the server.
 
 The page can send playback events to PostHog. It does not send the PDF text or the file name. Session recording starts only after you click **Allow recording**.

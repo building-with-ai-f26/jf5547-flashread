@@ -195,7 +195,7 @@
     <header>
       <span class="eyebrow">NYU Stern · Building with AI · Fall 2026</span>
       <h1>FlashRead</h1>
-      <p class="tagline">FlashRead helps university students read academic PDFs more efficiently through Rapid Serial Visual Presentation (RSVP), showing one word at a time at an adjustable speed.</p>
+      <p class="tagline">Upload a text-based PDF, then speed-read it, summarize it, or listen to a short narration. An optional quiz checks the original document.</p>
       <div class="cta-row">
         <a class="btn" id="try-product" href="#live-demo">See the Product →</a>
         <a class="btn btn-secondary" href="#prd">Read the Living PRD</a>
@@ -207,20 +207,24 @@
     <section id="live-demo">
       <h2>Product Showcase (Prototype / Live App / 2-Min Video)</h2>
       <p>
-        <strong>Current Status:</strong> Build 2 local app. It runs on a Windows laptop at <code>http://localhost:8000</code>. It is not publicly hosted.<br />
+        <strong>Current Status:</strong> Build 3 local app. It runs on a Windows laptop at <code>http://localhost:8000</code>. It is not publicly hosted.<br />
         <strong>Repository:</strong> <a href="https://github.com/building-with-ai-f26/jf5547-flashread">github.com/building-with-ai-f26/jf5547-flashread</a><br />
         <strong>Product Page:</strong> <a href="https://building-with-ai-f26.github.io/jf5547-flashread/">building-with-ai-f26.github.io/jf5547-flashread</a><br />
         <strong>How to run:</strong> from the repo folder, <code>powershell -ExecutionPolicy Bypass -File app\serve.ps1</code>, then open <code>http://localhost:8000</code>.
       </p>
       <p>
-        <strong>What works now:</strong> upload a text-based PDF, extract words in the browser, play, pause, rewind 10 words, and set speed from 150 to 600 WPM. John confirmed a real PDF upload on the local app. Optional <strong>Summarize PDF with AI</strong> is in the app; it needs an OpenRouter key in <code>.env</code> before it returns a paragraph. The live cloud URL and two-minute video come in Build 5.
+        <strong>What works now:</strong> upload a text-based PDF and choose Speed Read, Summarize, or Podcast without uploading again. Speed Read plays, pauses, rewinds 10 words, scrubs, and sets speed from 150 to 600 WPM. It shows percent complete, word position, PDF page, time left, a focal letter, and the surrounding text with the current word highlighted. Summarize, Podcast, and Test My Understanding call the local server, which calls OpenRouter only when <code>OPENROUTER_API_KEY</code> is in <code>.env</code>. Without that key, those buttons explain how to add it and do not invent a summary, quiz, or audio file. Podcast audio, once a script comes back, is a WAV from the Windows voice on this computer, not a cloud studio voice. A live model reply was not produced in this build because this machine has no <code>.env</code> key. The live cloud URL and two-minute video come in Build 5.
       </p>
-      <img class="screenshot" src="assets/flashread-build1.png" alt="FlashRead Build 1 prototype paused on the word 'FlashRead', word 8 of 47, with Play, Pause, and Rewind 10 words buttons and a speed slider set to 350 words per minute." />
+      <img class="screenshot" src="assets/flashread-build3.png" alt="FlashRead reader paused on the word surrounding, with the letter r highlighted, at 32 percent, word 25 of 79, page 1 of 2, and the same word highlighted in the surrounding text." />
+      <p class="meta">
+        Local reader on November 19, 2026, paused on a 79-word, two-page test PDF. The screenshot shows the focal letter, progress, page, time left, and highlighted context. It does not show a live AI summary, quiz, or narration.
+      </p>
+      <img class="screenshot" src="assets/flashread-build1.png" alt="FlashRead Build 1 prototype paused on the word FlashRead, word 8 of 47, with Play, Pause, and Rewind 10 words buttons and a speed slider set to 350 words per minute." />
       <p class="meta">
         Local reader, paused on word 8 of a 47-word, two-page test PDF at 350 words per minute. This shows Play, Pause, Rewind, and the speed slider. It does not show the optional AI summary.
       </p>
       <p>
-        This page sends a pageview and <code>clicked_try_product</code> to PostHog. Session replay starts only after you click Allow recording below. Tell testers when recording is on. The local app sends playback events the same way and does not send the PDF text or file name.
+        This page sends a pageview and <code>clicked_try_product</code> to PostHog. Session replay starts only after you click Allow recording below. Tell testers when recording is on. The local app sends playback events the same way and does not send the PDF text, file name, summary, script, or quiz text. After a real run it can also send <code>mode_selected</code>, <code>summary_generated</code>, <code>podcast_generated</code>, <code>quiz_started</code>, and <code>quiz_completed</code>. The November 16 screenshot below does not include those newer events. To capture them: open PostHog project 723597, Activity, use the app at <code>http://localhost:8000</code>, then refresh Activity.
       </p>
       <img class="screenshot" src="assets/posthog-events.png" alt="PostHog Activity list showing clicked_try_product, session recording snapshots, and web vitals from the local FlashRead app." />
       <p class="meta">
@@ -233,38 +237,38 @@
       <h2>Living PRD (Product Requirements Document)</h2>
       <p class="meta">Updated every week as we test with real users and learn what works.</p>
 
-      <p class="meta">PRD v2, November 16, 2026. Build 1 text is kept where it still describes the product.</p>
+      <p class="meta">PRD v3, November 19, 2026. Earlier statements stay where they still describe the product.</p>
 
       <h3>1. Target User & The Job to Be Done</h3>
       <p><strong>Who is this for?</strong> NYU Stern MBA students with lengthy assigned readings, including academic articles and case studies.</p>
       <p><strong>The problem:</strong> Long, dense PDFs are time-consuming and can make it difficult to maintain attention and reading momentum.</p>
       <p><strong>The painful "Before" workflow:</strong> Students scroll through dense PDFs and repeatedly lose their place or focus.</p>
-      <p><strong>The "After" workflow with this product:</strong> Students upload a PDF and read it word by word at their preferred pace, with playback controls to pause, go back, and change speed. They can also click once for a short AI summary of the extracted text.</p>
-      <p class="meta">FlashRead is meant to help students keep their place and momentum. It does not claim that reading faster improves comprehension; that still has to be tested with real students.</p>
+      <p><strong>The "After" workflow with this product:</strong> Students upload a PDF once, then speed-read the document, generate a summary and speed-read that, or listen to a short narration. Each mode can ask for a quiz grounded in the original PDF. Progress, page, and surrounding text stay visible during speed reading.</p>
+      <p class="meta">FlashRead is meant to help students keep their place. It does not claim that reading faster improves comprehension. That is the hypothesis this build makes testable.</p>
 
       <h3>2. Scope & Explicit Non-Goals</h3>
       <ul>
-        <li><strong>In Scope (Core Workflow):</strong> Upload a text-based PDF → extract its text in the browser → show one word at a time → play, pause, rewind 10 words, and adjust speed from 150 to 600 words per minute.</li>
-        <li><strong>In Scope (Build 2, optional):</strong> After the text is extracted, the student can click Summarize PDF with AI. The local server sends up to 6,000 characters to OpenRouter and shows one short paragraph. Reading still works if this step is skipped.</li>
-        <li><strong>Out of Scope #1:</strong> AI chat, quizzes, or a summary that replaces reading the document.</li>
+        <li><strong>In Scope (Core Workflow):</strong> Upload a text-based PDF, choose Speed Read, Summarize, or Podcast, and switch modes without uploading again. Speed Read shows one word at a time with play, pause, rewind 10 words, a scrubber, and speed from 150 to 600 WPM, plus percent, page, time left, and surrounding text.</li>
+        <li><strong>In Scope (AI, click-triggered):</strong> Summarize, write a five-question quiz from the original PDF, or write a narration script. The local server sends the extracted text to OpenRouter only after the click. A quiz has four choices, one correct answer, an explanation after the student answers, and a score. The narration script is spoken on this computer into a WAV file.</li>
+        <li><strong>Out of Scope #1:</strong> AI chat, and any summary or narration that is treated as a substitute for checking the source.</li>
         <li><strong>Out of Scope #2:</strong> OCR for scanned PDFs (pages that are images of text).</li>
-        <li><strong>Out of Scope #3:</strong> Collaborative annotations or shared notes.</li>
+        <li><strong>Out of Scope #3:</strong> Collaborative annotations, accounts, or a hosted backend. A cloud podcast voice is also out of scope until a paid voice service is approved.</li>
       </ul>
 
-      <h3>3. Biggest Risk, How Build 2 Tests It, and How the App Works</h3>
-      <p><strong>Biggest risk:</strong> Text pulled from real academic PDFs (multi-column layouts, headers, footers, footnotes, page numbers) may come out messy or out of reading order, and students may be unable to follow the argument one word at a time. A related product risk is that even clean one-word reading may feel uncomfortable enough that people stop. Build 1 checked a simple generated PDF only, so both parts are unproven.</p>
-      <p><strong>How Build 2 tests it:</strong> The local app can now be handed to a tester. PostHog Activity on this page shows <code>clicked_try_product</code> and session recording snapshots. The app can also send <code>pdf_uploaded</code> (word count and page count only), <code>reading_started</code>, <code>reading_paused</code>, <code>reading_speed_changed</code>, and <code>reading_completed</code>. A finished session is a weak signal that someone got through the words. It does not show whether the words were in the right order or whether the person understood them. Those questions still need a person to compare the reader with the original PDF. Session replay, after the tester clicks Allow recording, can show where they hesitated. The current word is masked in the recording, so replay will not reveal the reading itself.</p>
-      <p><strong>How it works:</strong> <code>app/serve.ps1</code> serves <code>app/index.html</code> at <code>http://localhost:8000</code>. The page uses PDF.js 3.11.174 from the cdnjs CDN to extract text in the browser. A timer shows one word at a time. Play, pause, rewind 10 words, and the 150–600 WPM slider stay in that page. PostHog's browser snippet, with public project token <code>phc_kRaNWd2sA5tThvAbEowwwewF8c5kZvoCXU6MJ7TnrWyV</code> and host <code>https://us.i.posthog.com</code>, records product events. <code>page_type</code> is <code>product_page</code> here and <code>local_app</code> in the reader. The optional summary is a POST to <code>/api/summarize</code> on the same local server. That server reads <code>OPENROUTER_API_KEY</code> from <code>.env</code> and calls OpenRouter model <code>openai/gpt-4o-mini</code>. The key is not in the HTML.</p>
+      <h3>3. Biggest Risk, How Build 3 Tests It, and How the App Works</h3>
+      <p><strong>Biggest risk:</strong> Can FlashRead help a student get through a document with less disorientation, without giving up comprehension? A classmate said the earlier reader felt like an endless stream of words with no sense of the page. Speed alone is not evidence of understanding. A separate technical risk remains: multi-column pages, headers, and footnotes can still extract out of order.</p>
+      <p><strong>How this build tests it:</strong> The reader now shows percent complete, word position, the PDF page when extraction has one, time left at the chosen speed, and a context panel that highlights the current word. That makes disorientation observable: a tester can say whether they still feel lost. Test My Understanding, after a key is added, scores five questions from the original PDF, which is a check on comprehension rather than a claim that speed reading improves it. PostHog can record <code>pdf_uploaded</code>, <code>mode_selected</code>, reading events, <code>summary_generated</code>, <code>podcast_generated</code>, <code>quiz_started</code>, and <code>quiz_completed</code> with counts and scores only. Those events still cannot prove the words were in the right order. A person has to compare the reader with the PDF. Session replay stays off until Allow recording, and document text, summaries, and quizzes are masked.</p>
+      <p><strong>How it works:</strong> <code>app/serve.ps1</code> serves <code>app/index.html</code> at <code>http://localhost:8000</code>. PDF.js 3.11.174 extracts text in the browser and keeps the page number on each word. One reader plays either the document or a summary. Summarize, quiz, and podcast script are POST requests to that server. The server reads <code>OPENROUTER_API_KEY</code> from <code>.env</code> and calls OpenRouter model <code>openai/gpt-4o-mini</code>. The key is not in the HTML. Podcast audio is a WAV written by Windows speech under <code>app/narration/</code>, which git ignores. PostHog uses public project token <code>phc_kRaNWd2sA5tThvAbEowwwewF8c5kZvoCXU6MJ7TnrWyV</code> and host <code>https://us.i.posthog.com</code>. <code>page_type</code> is <code>product_page</code> here and <code>local_app</code> in the reader.</p>
 
       <h3>4. Unit Economics & Analytics Snapshot (Updated Weekly)</h3>
       <div class="grid-2">
         <div class="stat-box">
           <div class="stat-label">Cumulative Build Spend</div>
-          <div class="stat-value">$20 Cursor credits purchased in Build 1; amount used unconfirmed. Build 2 API spend measured at $0.</div>
+          <div class="stat-value">$20 Cursor credits purchased in Build 1; amount used unconfirmed. Build 2 and Build 3 API spend measured at $0.</div>
         </div>
         <div class="stat-box">
           <div class="stat-label">Est. Cost Per User Run</div>
-          <div class="stat-value">Reading: $0. Summary: under $0.01 at listed gpt-4o-mini rates, only if a key is set.</div>
+          <div class="stat-value">Reading and local WAV: $0. Summary, quiz, or script: under $0.02 at the November 16 gpt-4o-mini rates, only if a key is set.</div>
         </div>
         <div class="stat-box">
           <div class="stat-label">User Evidence (Analytics from Build 2)</div>
@@ -275,7 +279,7 @@
           <div class="stat-value">TBD</div>
         </div>
       </div>
-      <p class="meta">Reading and GitHub Pages hosting have no metered charge in this build. No PostHog invoice was recorded in this repository. OpenRouter's listed price for <code>openai/gpt-4o-mini</code>, checked November 16, 2026, is $0.15 per 1M input tokens and $0.60 per 1M output tokens. A summary sends at most 6,000 characters and asks for at most 180 output tokens, which is under one cent at those rates even if every character were its own token. No successful summary call was made in this build, so measured AI spend is $0.</p>
+      <p class="meta">Reading, GitHub Pages, and the Windows WAV have no metered charge. No PostHog invoice was recorded in this repository. OpenRouter's listed price for <code>openai/gpt-4o-mini</code>, recorded here on November 16, 2026, is $0.15 per 1M input tokens and $0.60 per 1M output tokens. A summary considers at most about 24,000 characters, in up to three chunks plus one combine, and asks for at most 500 tokens on the final pass. A quiz or podcast script sends at most 12,000 characters. At those caps and rates, each action is under two cents even if every four characters were a token. No successful model call was made on November 19, so measured AI spend for this build is $0.</p>
     </section>
 
     <!-- WEEKLY BUILD LOG (Updated at least twice a week via Git commits) -->
@@ -311,9 +315,13 @@
       <div class="log-entry">
         <h3>Build 3 · Build.exe: The Core Workflow (Due Nov 23)</h3>
         <ul>
-          <li><strong>What shipped:</strong> [End-to-end workflow working with real inputs + PostHog funnel events]</li>
-          <li><strong>What broke / changed in PRD:</strong> [Fill in]</li>
-          <li><strong>Cost & time this week:</strong> $[0.00] · [0] hours</li>
+          <li><strong>Progress:</strong> The local app now opens on a homepage with three modes: Speed Read, Summarize, and Podcast. One upload can be used in all three. Speed Read keeps play, pause, rewind 10 words, and 150–600 WPM, and adds a scrubber, percent, PDF page, time left, a focal letter, text size, an optional sentence pause, keyboard shortcuts, and surrounding text with the current word highlighted. Summarize, quiz, and podcast script go through <code>app/serve.ps1</code> to OpenRouter. The quiz UI scores five questions after a valid response. Podcast audio is a local Windows WAV after a script returns. PRD v3 is this page. The new screenshot above is the running reader on a 79-word, two-page test PDF.</li>
+          <li><strong>Lessons:</strong> A classmate's "endless stream of words" comment is a product risk, not a claim that speed reading works. Page numbers have to come from PDF.js during extraction. A CSS <code>display</code> rule can override the HTML <code>hidden</code> attribute, so the homepage stayed visible on top of the reader until that was corrected. The OpenRouter key is still absent, so a live model reply is not evidence yet.</li>
+          <li><strong>Problems:</strong> There is no <code>.env</code> and no <code>OPENROUTER_API_KEY</code> on this machine. Summarize, Podcast, and Test My Understanding return the setup message. Windows speech can write a WAV; that was checked with a one-sentence probe, not through a full Generate Podcast click. Git history before today is November 9 and November 16 only. This build does not backdate commits.</li>
+          <li><strong>What changed in the PRD:</strong> Quizzes and a summary that can itself be speed-read moved into scope. A cloud podcast voice, chat, OCR, and accounts stay out. The biggest risk is now whether progress and a source quiz reduce disorientation without pretending that speed improves comprehension. Extraction order is still a risk.</li>
+          <li><strong>Costs:</strong> Measured API and hosting spend for this build: $0. No OpenRouter call was made. Local WAV generation has no provider charge. The Build 1 log records a $20 Cursor credit purchase; how much of that was used is still unconfirmed.</li>
+          <li><strong>Hours:</strong> Not recorded in this log. John can fill in hours spent.</li>
+          <li><strong>Checks run on November 19:</strong> Browser checks on the local app used a 79-word, two-page text PDF. The page reported 79 words and 2 pages. Speed Read showed word 1 on page 1, then Play advanced (observed at word 29 and later), Pause held the word, Rewind moved back 10 words, the left arrow moved back another 10, the scrubber reached page 2, and 600 WPM changed the time-left label. Context highlight matched the current word. Font size changed to 80px and was set back to 64px for the screenshot. Summary, Podcast, and Quiz without a key showed the setup message and created no audio. A stand-in quiz payload scored 5 of 5, hid answers before the click, explained the choice after it, and Try Again returned to question 1. Home still had the same PDF, and Speed Read restored word 61 of page 2. Server checks: the app page returned 200, a missing-key summary, quiz, and podcast returned 503, an empty summary body returned 400, and a path outside the app folder returned 404. The server log recorded counts, not document text.</li>
         </ul>
       </div>
 
