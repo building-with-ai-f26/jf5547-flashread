@@ -84,7 +84,7 @@
       position: absolute;
       inset: 0;
       background:
-        radial-gradient(ellipse at center, rgba(16, 14, 12, 0.28) 0%, rgba(16, 14, 12, 0.42) 58%, rgba(16, 14, 12, 0.62) 100%);
+        linear-gradient(to bottom, rgba(12, 10, 8, 0.18), rgba(12, 10, 8, 0.08) 42%, rgba(12, 10, 8, 0.38));
     }
 
     .shell {
@@ -107,14 +107,37 @@
       color: #f6f3ee;
     }
 
-    body.on-home .eyebrow { color: rgba(255, 248, 240, 0.86); }
-    body.on-home h1,
-    body.on-home .lede {
+    body.on-home h1 {
       color: #f8f5f0;
-      text-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+      font-weight: 500;
+      font-size: clamp(52px, 7vw, 84px);
+      letter-spacing: -0.035em;
+      text-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
     }
 
-    body.on-home .fine { color: rgba(255, 248, 240, 0.78); }
+    body.on-home .fine { display: none; }
+
+    body.on-home .replay-bar {
+      left: 50%;
+      right: auto;
+      width: min(760px, calc(100% - 32px));
+      transform: translateX(-50%);
+      padding: 8px 10px 8px 14px;
+      border-color: rgba(255, 255, 255, 0.16);
+      background: rgba(18, 14, 10, 0.42);
+      color: rgba(255, 248, 240, 0.84);
+      font-size: 13px;
+      box-shadow: none;
+      backdrop-filter: blur(16px);
+    }
+
+    body.on-home .replay-bar button {
+      border: 0;
+      border-radius: 999px;
+      background: rgba(255, 252, 247, 0.92);
+      color: #1c1915;
+      padding: 7px 12px;
+    }
 
     .eyebrow {
       margin: 0;
@@ -147,15 +170,15 @@
       align-items: center;
       gap: 14px;
       margin: 28px auto 0;
-      width: min(720px, 100%);
-      border: 1px solid rgba(255, 255, 255, 0.38);
-      background: rgba(255, 252, 247, 0.16);
+      width: min(520px, 100%);
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      background: rgba(255, 252, 247, 0.12);
       backdrop-filter: blur(18px);
       border-radius: 999px;
-      padding: 10px 10px 10px 22px;
+      padding: 8px 8px 8px 20px;
       text-align: left;
       cursor: pointer;
-      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.18);
+      box-shadow: none;
     }
 
     .dropzone.drag, .dropzone:hover {
@@ -176,6 +199,7 @@
       color: rgba(255, 248, 240, 0.78);
       font-size: 13px;
     }
+    #home-status:empty { display: none; }
 
     .text-btn, .primary, .quiet {
       border-radius: 999px;
@@ -194,38 +218,36 @@
     .quiet { background: transparent; border-color: var(--line); }
 
     .choices {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 14px;
-      margin-top: 22px;
-      text-align: left;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
     }
 
     .choice {
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
+      align-items: center;
       gap: 8px;
-      min-height: 148px;
-      padding: 18px 16px;
-      border-radius: 18px;
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      background: rgba(255, 252, 247, 0.14);
+      padding: 11px 16px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      background: rgba(255, 252, 247, 0.1);
       color: #fff;
-      backdrop-filter: blur(16px);
-      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
-      text-align: left;
-      transition: border-color 0.16s ease, transform 0.16s ease, background 0.16s ease;
+      backdrop-filter: blur(14px);
+      box-shadow: none;
+      transition: border-color 0.16s ease, background 0.16s ease;
     }
 
     .choice:hover, .choice[aria-pressed="true"] {
-      border-color: rgba(255, 255, 255, 0.85);
-      background: rgba(255, 252, 247, 0.24);
-      transform: translateY(-2px);
+      border-color: rgba(255, 255, 255, 0.7);
+      background: rgba(255, 252, 247, 0.2);
     }
 
-    .choice svg { width: 28px; height: 28px; stroke: #fff; fill: none; stroke-width: 1.7; }
-    .choice strong { font-size: 18px; }
-    .choice span { color: rgba(255, 248, 240, 0.82); line-height: 1.4; }
+    .choice svg { width: 18px; height: 18px; stroke: #fff; fill: none; stroke-width: 1.7; }
+    .choice strong { font-size: 15px; font-weight: 600; }
+    .choice span { display: none; }
 
     .topbar {
       display: flex;
@@ -426,10 +448,9 @@
     .fine { margin: 18px 0 0; color: rgba(255, 248, 240, 0.78); font-size: 13px; text-align: center; text-shadow: 0 6px 18px rgba(0, 0, 0, 0.35); }
 
     @media (max-width: 800px) {
-      .choices, .sliders { grid-template-columns: 1fr; }
-      .home { min-height: auto; justify-content: flex-start; padding-top: 4px; }
-      .choice { min-height: 0; padding: 12px 14px; gap: 4px; }
-      .choices { gap: 8px; margin-top: 12px; }
+      .sliders { grid-template-columns: 1fr; }
+      .home { min-height: auto; justify-content: flex-start; padding-top: 12vh; }
+      .choices { gap: 8px; margin-top: 14px; }
       .lede { font-size: 16px; margin-top: 10px; }
       .dropzone { margin-top: 16px; padding-left: 16px; }
       .shell { padding-top: 18px; padding-bottom: 150px; }
@@ -454,13 +475,11 @@
   </div>
   <div class="shell">
     <section id="view-home" class="home">
-      <p class="eyebrow">FlashRead</p>
-      <h1>What do you want to do?</h1>
-      <p class="lede">Upload a text-based PDF, then choose how to learn it. The file stays on this computer until you ask for an AI action.</p>
+      <h1>FlashRead</h1>
       <div id="dropzone" class="dropzone" tabindex="0">
         <div class="search-copy">
-          <h2 id="drop-title">Drop a text-based PDF</h2>
-          <p id="home-status" class="ph-mask">or browse from this computer</p>
+          <h2 id="drop-title">Drop a PDF</h2>
+          <p id="home-status" class="ph-mask"></p>
         </div>
         <button id="browse" class="text-btn" type="button">Browse</button>
         <input id="pdf-input" type="file" accept="application/pdf,.pdf" hidden />
@@ -468,17 +487,17 @@
       <div class="choices">
         <button class="choice" type="button" data-mode="read">
           <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M5 16h7M20 16h7"/><circle cx="16" cy="16" r="3.2"/></svg>
-          <strong>Speed Read PDF</strong>
+          <strong>Speed read</strong>
           <span>Read one word at a time, with your place and the surrounding text in view.</span>
         </button>
         <button class="choice" type="button" data-mode="summary">
           <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M7 6h14l6 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"/><path d="M20 6v6h6M9 16h12M9 21h8"/></svg>
-          <strong>Summarize PDF</strong>
+          <strong>Summarize</strong>
           <span>Generate a short AI summary, then speed-read that summary.</span>
         </button>
         <button class="choice" type="button" data-mode="podcast">
           <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 5a5 5 0 0 1 5 5v6a5 5 0 0 1-10 0v-6a5 5 0 0 1 5-5z"/><path d="M8 15a8 8 0 0 0 16 0M16 23v4M12 27h8"/></svg>
-          <strong>PDF to Podcast</strong>
+          <strong>Podcast</strong>
           <span>Turn the document into a short narration you can play.</span>
         </button>
       </div>
@@ -1045,7 +1064,7 @@
       if (!doc.tokens.length) {
         pendingMode = mode;
         showView("home");
-        setHomeStatus("Add a text PDF first. FlashRead will open this mode when it is ready.");
+        setHomeStatus("Add a text PDF first.");
         paintModes();
         dropzone.focus();
         return;
@@ -1178,8 +1197,8 @@
         if (savedIndex !== null && savedIndex < extracted.tokens.length) places.document = savedIndex;
         var minutes = Math.round(extracted.tokens.length / 300);
         var timeLabel = minutes < 1 ? "under 1 min" : "about " + minutes + " min";
-        var resumeNote = places.document > 0 ? " Back at word " + (places.document + 1) + "." : "";
-        setHomeStatus(extracted.tokens.length + " words across " + extracted.pageCount + " page" + (extracted.pageCount === 1 ? "" : "s") + ", " + timeLabel + " at 300 wpm." + resumeNote + " Choose a way to learn it, or replace the PDF.");
+        var resumeNote = places.document > 0 ? " · back at word " + (places.document + 1) : "";
+        setHomeStatus(extracted.tokens.length + " words · " + extracted.pageCount + " page" + (extracted.pageCount === 1 ? "" : "s") + resumeNote);
         track("pdf_uploaded", { word_count: extracted.tokens.length, page_count: extracted.pageCount });
         var next = pendingMode;
         pendingMode = null;
