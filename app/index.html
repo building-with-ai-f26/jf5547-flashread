@@ -103,6 +103,27 @@
       text-align: center;
     }
 
+    #home-main { width: 100%; }
+    .intro { display: flex; justify-content: center; }
+    #intro-go {
+      border: 1px solid rgba(255, 255, 255, 0.42);
+      border-radius: 999px;
+      padding: 18px 32px;
+      background: rgba(255, 252, 247, 0.16);
+      color: #fff;
+      font-size: 20px;
+      letter-spacing: 0.01em;
+      backdrop-filter: blur(18px);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22);
+      transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+    }
+    #intro-go:hover {
+      background: rgba(255, 252, 247, 0.28);
+      border-color: rgba(255, 255, 255, 0.75);
+    }
+    #intro-go:active { transform: scale(0.98); }
+    body.intro .replay-bar { display: none; }
+
     body.on-home {
       color: #f6f3ee;
     }
@@ -286,6 +307,8 @@
     }
 
     .panel {
+      position: relative;
+      overflow: hidden;
       background: rgba(255, 252, 247, 0.74);
       backdrop-filter: blur(22px) saturate(1.15);
       border: 1px solid rgba(255, 255, 255, 0.48);
@@ -308,14 +331,48 @@
     }
     .note { max-width: 48ch; }
 
-    @keyframes arrive {
-      from { opacity: 0; transform: translateY(28px) scale(0.975); }
+    @keyframes page-open {
+      from { opacity: 0; transform: perspective(1100px) rotateY(-11deg) translateY(18px); }
       to { opacity: 1; transform: none; }
     }
 
-    .arrive { animation: arrive 0.68s cubic-bezier(0.16, 0.84, 0.32, 1) both; }
-    .topbar.arrive { animation-duration: 0.42s; }
-    .dummy-sheet.arrive { animation-delay: 0.12s; }
+    @keyframes sheen {
+      from { transform: translateX(-130%); }
+      to { transform: translateX(130%); }
+    }
+
+    @keyframes bar-in {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: none; }
+    }
+
+    @keyframes settle {
+      from { transform: scale(1.045); }
+      to { transform: scale(1); }
+    }
+
+    .panel.arrive {
+      animation: page-open 0.74s cubic-bezier(0.16, 0.84, 0.32, 1) both;
+      transform-origin: left center;
+    }
+
+    .panel.arrive::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: linear-gradient(105deg, transparent 36%, rgba(255, 255, 255, 0.48) 50%, transparent 64%);
+      animation: sheen 0.9s 0.08s ease both;
+      pointer-events: none;
+    }
+
+    .topbar.arrive { animation: bar-in 0.42s cubic-bezier(0.16, 0.84, 0.32, 1) both; }
+    .dummy-sheet.arrive {
+      animation: page-open 0.74s 0.1s cubic-bezier(0.16, 0.84, 0.32, 1) both;
+      transform-origin: right center;
+    }
+
+    body.opening .backdrop img { animation: settle 0.9s cubic-bezier(0.16, 0.84, 0.32, 1) both; }
 
     .stage {
       position: relative;
@@ -557,13 +614,13 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .choice, .modes button, #go-home, .primary, .quiet { transition: none; }
+      .choice, .modes button, #go-home, .primary, .quiet, #intro-go { transition: none; }
       .choice:hover, .choice[aria-pressed="true"], .primary:hover, .quiet:hover { transform: none; }
-      .arrive { animation: none; }
+      .arrive, .panel.arrive, .dummy-sheet.arrive, .topbar.arrive, .panel.arrive::after, body.opening .backdrop img { animation: none; }
     }
   </style>
 </head>
-<body class="on-home">
+<body class="on-home intro">
   <div class="backdrop" aria-hidden="true">
     <video id="bg-video" autoplay muted loop playsinline preload="auto">
       <source src="media/home.mp4" type="video/mp4" />
@@ -572,6 +629,10 @@
   </div>
   <div class="shell">
     <section id="view-home" class="home">
+      <div id="intro" class="intro">
+        <button id="intro-go" type="button">let's read, girls</button>
+      </div>
+      <div id="home-main" hidden>
       <h1>FlashRead</h1>
       <div id="dropzone" class="dropzone" tabindex="0">
         <div class="search-copy">
@@ -597,6 +658,7 @@
           <strong>Podcast</strong>
           <span>Turn the document into a short narration you can play.</span>
         </button>
+      </div>
       </div>
     </section>
 
@@ -847,15 +909,22 @@
       return canvas.toDataURL("image/jpeg", 0.86);
     }
 
+    var introDismissed = false;
+
     function setBackdrop(useStill) {
       if (!bgVideo || !bgStill) return;
-      document.body.classList.toggle("on-home", !useStill);
+      var hold = introDismissed && !useStill;
+      document.body.classList.toggle("on-home", !useStill || hold);
       if (useStill) {
         var frame = captureFrame() || posterUrl;
         if (frame) bgStill.src = frame;
         bgVideo.pause();
         bgStill.hidden = false;
         bgVideo.hidden = true;
+      } else if (hold) {
+        bgStill.hidden = true;
+        bgVideo.hidden = false;
+        bgVideo.pause();
       } else {
         bgStill.hidden = true;
         bgVideo.hidden = false;
@@ -865,6 +934,34 @@
         }
       }
     }
+
+    function dismissIntro() {
+      introDismissed = true;
+      document.body.classList.remove("intro");
+      var introEl = document.querySelector("#intro");
+      var homeMain = document.querySelector("#home-main");
+      if (introEl) introEl.hidden = true;
+      if (homeMain) homeMain.hidden = false;
+      if (!bgVideo) return;
+      bgVideo.pause();
+      var finish = function () {
+        bgVideo.pause();
+        if (bgVideo.hidden && bgStill) {
+          var frame = captureFrame();
+          if (frame) bgStill.src = frame;
+          document.body.classList.add("on-home");
+        }
+      };
+      var startedAt = bgVideo.currentTime;
+      bgVideo.addEventListener("seeked", function once() {
+        bgVideo.removeEventListener("seeked", once);
+        finish();
+      });
+      bgVideo.currentTime = 0;
+      if (startedAt < 0.05) finish();
+    }
+
+    document.querySelector("#intro-go").addEventListener("click", dismissIntro);
 
     if (bgVideo) {
       bgVideo.addEventListener("loadeddata", function () {
@@ -906,6 +1003,9 @@
       }
       var bar = document.querySelector(".topbar");
       if (bar) targets.unshift(bar);
+      document.body.classList.remove("opening");
+      void document.body.offsetWidth;
+      document.body.classList.add("opening");
       for (var i = 0; i < targets.length; i++) {
         var node = targets[i];
         if (!node) continue;
