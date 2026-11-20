@@ -296,12 +296,21 @@
     .choice strong { font-size: 15px; font-weight: 600; }
     .choice span { display: none; }
 
+    .sample-note {
+      display: inline-block;
+      margin: 22px auto 0;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(255, 252, 247, 0.9);
+      color: #1c1915;
+      font-size: 14px;
+    }
     .sample-row {
       display: flex;
       justify-content: center;
       flex-wrap: wrap;
       gap: 8px 18px;
-      margin: 18px auto 0;
+      margin: 10px auto 0;
     }
     .sample-row button, .sample-row a {
       border: 1px solid rgba(255, 255, 255, 0.55);
@@ -473,6 +482,21 @@
       margin: 18px 0 14px;
     }
     #play-narration { margin-top: 4px; }
+    .cast-progress { width: 100%; margin-top: 14px; }
+    .cast-track {
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(28, 25, 21, 0.1);
+      overflow: hidden;
+    }
+    .cast-track span {
+      display: block;
+      height: 100%;
+      width: 0;
+      border-radius: inherit;
+      background: var(--accent);
+      transition: width 0.45s ease;
+    }
     #view-podcast .speeds {
       display: inline-flex;
       gap: 2px;
@@ -669,7 +693,7 @@
         margin-top: 14px;
       }
       #view-summary .row button, #view-podcast .row:not(.speeds) button { width: 100%; }
-      #podcast-status, #summary { order: 4; }
+      #podcast-status, #summary, #podcast-progress { order: 4; }
       #view-podcast audio, #play-narration { order: 5; }
       #view-podcast .speeds { order: 6; align-self: flex-start; }
       #view-summary > .note, #view-podcast > .note { order: 7; }
@@ -679,6 +703,7 @@
     @media (prefers-reduced-motion: reduce) {
       .choice, .modes button, #go-home, .primary, .quiet, #intro-go { transition: none; }
       .choice:hover, .choice[aria-pressed="true"], .primary:hover, .quiet:hover { transform: none; }
+      .cast-track span { transition: none; }
       .arrive, .panel.arrive, .dummy-sheet.arrive, .topbar.arrive, body.opening .backdrop img { animation: none; }
     }
   </style>
@@ -716,13 +741,14 @@
         </button>
         <button class="choice" type="button" data-mode="podcast">
           <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 5a5 5 0 0 1 5 5v6a5 5 0 0 1-10 0v-6a5 5 0 0 1 5-5z"/><path d="M8 15a8 8 0 0 0 16 0M16 23v4M12 27h8"/></svg>
-          <strong>Podcast</strong>
+          <strong>Turn it into a podcast</strong>
           <span>Turn the document into a short narration you can play.</span>
         </button>
       </div>
+      <p class="sample-note">Don't have a PDF? No problem, use this pre-loaded one.</p>
       <div class="sample-row">
-        <button id="use-sample" type="button">Use a sample PDF</button>
-        <a href="media/sample-reading.pdf" download="sample-reading.pdf">Download a sample PDF</a>
+        <button id="use-sample" type="button">Read the sample</button>
+        <a href="media/sample-reading.pdf" download="sample-reading.pdf">Download</a>
       </div>
       </div>
     </section>
@@ -733,7 +759,7 @@
         <nav class="modes" aria-label="Learning modes">
           <button type="button" data-mode="read">Speed read</button>
           <button type="button" data-mode="summary">Summary</button>
-          <button type="button" data-mode="podcast">Podcast</button>
+          <button type="button" data-mode="podcast">Turn it into a podcast</button>
         </nav>
       </div>
 
@@ -799,14 +825,19 @@
       </section>
 
       <section id="view-podcast" class="panel" hidden>
-        <p class="kicker">PDF to Podcast</p>
+        <p class="kicker">Turn it into a podcast</p>
         <h2 class="view-title">Listen to the document</h2>
-        <p class="note">Generate Podcast sends the extracted text to OpenRouter to write a script, then speaks it with a natural narration voice. If that voice is unavailable, this computer uses the Windows voice instead. Nothing is sent until you click.</p>
+        <p class="note">This sends the extracted text to OpenRouter to write a script, then speaks it with a natural narration voice. If that voice is unavailable, this computer uses the Windows voice instead. Nothing is sent until you click.</p>
         <div class="row">
-          <button id="make-podcast" class="primary" type="button">Generate Podcast</button>
+          <button id="make-podcast" class="primary" type="button">Turn it into a podcast</button>
           <button id="quiz-from-podcast" class="quiet" type="button">Test My Understanding</button>
         </div>
         <p id="podcast-status" class="note ph-mask"></p>
+        <div id="podcast-progress" class="cast-progress" hidden>
+          <div id="podcast-track" class="cast-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Podcast progress">
+            <span id="podcast-bar"></span>
+          </div>
+        </div>
         <audio id="player" controls preload="none" playsinline></audio>
         <button id="play-narration" class="primary" type="button" hidden>Play narration</button>
         <div class="row speeds" aria-label="Narration speed">
@@ -1485,6 +1516,7 @@
       summaryNote.textContent = "";
       speedSummaryBtn.disabled = true;
       podcastStatus.textContent = "";
+      stopPodcastProgress(false);
       player.pause();
       player.removeAttribute("src");
       player.load();
@@ -1496,6 +1528,8 @@
 
     function loadFile(file) {
       if (!file) return;
+      var shouldRead = readAfterLoad;
+      readAfterLoad = false;
       var isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name || "");
       if (!isPdf) {
         setHomeStatus("Choose a PDF file.");
@@ -1528,6 +1562,12 @@
         var resumeNote = places.document > 0 ? " · back at word " + (places.document + 1) : "";
         setHomeStatus(extracted.tokens.length + " words · " + extracted.pageCount + " page" + (extracted.pageCount === 1 ? "" : "s") + resumeNote);
         track("pdf_uploaded", { word_count: extracted.tokens.length, page_count: extracted.pageCount });
+        if (shouldRead) {
+          pendingMode = null;
+          showRead("document");
+          play();
+          return;
+        }
         var next = pendingMode;
         pendingMode = null;
         if (next) selectMode(next);
@@ -1586,6 +1626,50 @@
       });
     }
 
+    var readAfterLoad = false;
+    var podcastTimer = null;
+
+    function setPodcastProgress(pct) {
+      var bar = document.querySelector("#podcast-bar");
+      var track = document.querySelector("#podcast-track");
+      var clamped = Math.max(0, Math.min(100, Math.round(pct)));
+      if (bar) bar.style.width = clamped + "%";
+      if (track) track.setAttribute("aria-valuenow", String(clamped));
+    }
+
+    function stopPodcastProgress(done) {
+      if (podcastTimer) {
+        clearInterval(podcastTimer);
+        podcastTimer = null;
+      }
+      var wrap = document.querySelector("#podcast-progress");
+      if (done) {
+        setPodcastProgress(100);
+        setTimeout(function () {
+          if (wrap) wrap.hidden = true;
+          setPodcastProgress(0);
+        }, 700);
+        return;
+      }
+      if (wrap) wrap.hidden = true;
+      setPodcastProgress(0);
+    }
+
+    function startPodcastProgress() {
+      stopPodcastProgress(false);
+      var begun = Date.now();
+      var wrap = document.querySelector("#podcast-progress");
+      if (wrap) wrap.hidden = false;
+      setPodcastProgress(6);
+      podcastStatus.textContent = "Writing the script…";
+      podcastTimer = setInterval(function () {
+        var seconds = (Date.now() - begun) / 1000;
+        var pct = seconds < 8 ? 6 + seconds * 4 : Math.min(92, 38 + (seconds - 8) * 1.6);
+        setPodcastProgress(pct);
+        podcastStatus.textContent = seconds < 8 ? "Writing the script…" : "Recording the narration…";
+      }, 400);
+    }
+
     function generatePodcast() {
       if (busy.podcast || !doc.tokens.length) return;
       if (publicDemo) {
@@ -1594,7 +1678,7 @@
       }
       busy.podcast = true;
       podcastBtn.disabled = true;
-      podcastStatus.textContent = "Writing the narration and creating an audio file on this computer. This can take a little while.";
+      startPodcastProgress();
       var packed = clipText(documentText());
       postJson("/api/podcast", packed.text).then(function (result) {
         if (!result.ok || !result.data || !result.data.audio_url) {
@@ -1625,6 +1709,8 @@
       }).catch(function () {
         podcastStatus.textContent = "The narration could not be created. Keep this screen open and try again.";
       }).then(function () {
+        var ready = podcastStatus.textContent.indexOf("Narration ready") === 0;
+        stopPodcastProgress(ready);
         busy.podcast = false;
         podcastBtn.disabled = false;
       });
@@ -1819,12 +1905,14 @@
     });
     document.querySelector("#use-sample").addEventListener("click", function () {
       setHomeStatus("Opening the sample…");
+      readAfterLoad = true;
       fetch("media/sample-reading.pdf").then(function (response) {
         if (!response.ok) throw new Error("missing");
         return response.arrayBuffer();
       }).then(function (buffer) {
         loadFile(new File([buffer], "sample-reading.pdf", { type: "application/pdf" }));
       }).catch(function () {
+        readAfterLoad = false;
         setHomeStatus("The sample PDF could not be opened.");
       });
     });
