@@ -273,6 +273,23 @@
     .choice strong { font-size: 15px; font-weight: 600; }
     .choice span { display: none; }
 
+    .sample-row {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 8px 18px;
+      margin: 18px auto 0;
+    }
+    .sample-row button, .sample-row a {
+      border: 1px solid rgba(255, 255, 255, 0.55);
+      border-radius: 999px;
+      background: rgba(255, 252, 247, 0.9);
+      color: #1c1915;
+      font-size: 14px;
+      text-decoration: none;
+      padding: 8px 14px;
+    }
+
     .topbar {
       display: flex;
       justify-content: space-between;
@@ -308,7 +325,6 @@
 
     .panel {
       position: relative;
-      overflow: hidden;
       background: rgba(255, 252, 247, 0.74);
       backdrop-filter: blur(22px) saturate(1.15);
       border: 1px solid rgba(255, 255, 255, 0.48);
@@ -336,11 +352,6 @@
       to { opacity: 1; transform: none; }
     }
 
-    @keyframes sheen {
-      from { transform: translateX(-130%); }
-      to { transform: translateX(130%); }
-    }
-
     @keyframes bar-in {
       from { opacity: 0; transform: translateY(-8px); }
       to { opacity: 1; transform: none; }
@@ -354,16 +365,6 @@
     .panel.arrive {
       animation: page-open 0.74s cubic-bezier(0.16, 0.84, 0.32, 1) both;
       transform-origin: left center;
-    }
-
-    .panel.arrive::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      border-radius: inherit;
-      background: linear-gradient(105deg, transparent 36%, rgba(255, 255, 255, 0.48) 50%, transparent 64%);
-      animation: sheen 0.9s 0.08s ease both;
-      pointer-events: none;
     }
 
     .topbar.arrive { animation: bar-in 0.42s cubic-bezier(0.16, 0.84, 0.32, 1) both; }
@@ -445,9 +446,10 @@
     #view-podcast audio {
       display: block;
       width: 100%;
-      height: 48px;
-      margin: 26px 0 14px;
+      min-height: 54px;
+      margin: 18px 0 14px;
     }
+    #play-narration { margin-top: 4px; }
     #view-podcast .speeds {
       display: inline-flex;
       gap: 2px;
@@ -607,16 +609,54 @@
       .lede { font-size: 16px; margin-top: 10px; }
       .dropzone { margin-top: 16px; padding-left: 16px; }
       .shell { padding-top: 18px; padding-bottom: 150px; }
-      .replay-bar { left: 12px; right: 12px; bottom: 8px; width: auto; transform: none; }
+      .replay-bar {
+        left: 12px;
+        right: 12px;
+        bottom: 8px;
+        width: auto;
+        transform: none;
+        flex-wrap: nowrap;
+        align-items: center;
+        padding: 8px;
+      }
+      .replay-bar p {
+        flex: 1 1 auto;
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
       .topbar { align-items: flex-start; flex-direction: column; }
       .read-stage, .read-stage.preview-off { grid-template-columns: 1fr; }
       .dummy-sheet { position: static; }
+      .panel { background: rgba(255, 252, 247, 0.94); backdrop-filter: none; }
+      .panel.arrive, .dummy-sheet.arrive { animation-name: bar-in; transform-origin: center top; }
+      #view-summary, #view-podcast {
+        display: flex;
+        flex-direction: column;
+        margin-top: 8px;
+        margin-bottom: 24px;
+      }
+      #view-summary .kicker, #view-podcast .kicker { order: 1; }
+      #view-summary .view-title, #view-podcast .view-title { order: 2; font-size: 34px; }
+      #view-summary .row, #view-podcast .row:not(.speeds) {
+        order: 3;
+        flex-direction: column;
+        align-items: stretch;
+        margin-top: 14px;
+      }
+      #view-summary .row button, #view-podcast .row:not(.speeds) button { width: 100%; }
+      #podcast-status, #summary { order: 4; }
+      #view-podcast audio, #play-narration { order: 5; }
+      #view-podcast .speeds { order: 6; align-self: flex-start; }
+      #view-summary > .note, #view-podcast > .note { order: 7; }
+      #summary-note { order: 8; }
     }
 
     @media (prefers-reduced-motion: reduce) {
       .choice, .modes button, #go-home, .primary, .quiet, #intro-go { transition: none; }
       .choice:hover, .choice[aria-pressed="true"], .primary:hover, .quiet:hover { transform: none; }
-      .arrive, .panel.arrive, .dummy-sheet.arrive, .topbar.arrive, .panel.arrive::after, body.opening .backdrop img { animation: none; }
+      .arrive, .panel.arrive, .dummy-sheet.arrive, .topbar.arrive, body.opening .backdrop img { animation: none; }
     }
   </style>
 </head>
@@ -658,6 +698,10 @@
           <strong>Podcast</strong>
           <span>Turn the document into a short narration you can play.</span>
         </button>
+      </div>
+      <div class="sample-row">
+        <button id="use-sample" type="button">Use a sample PDF</button>
+        <a href="media/sample-reading.pdf" download="sample-reading.pdf">Download a sample PDF</a>
       </div>
       </div>
     </section>
@@ -742,7 +786,8 @@
           <button id="quiz-from-podcast" class="quiet" type="button">Test My Understanding</button>
         </div>
         <p id="podcast-status" class="note ph-mask"></p>
-        <audio id="player" controls preload="metadata"></audio>
+        <audio id="player" controls preload="none" playsinline></audio>
+        <button id="play-narration" class="primary" type="button" hidden>Play narration</button>
         <div class="row speeds" aria-label="Narration speed">
           <button class="rate" type="button" data-rate="0.75" aria-pressed="false">0.75×</button>
           <button class="rate" type="button" data-rate="1" aria-pressed="true">1×</button>
@@ -1012,6 +1057,11 @@
         node.classList.remove("arrive");
         void node.offsetWidth;
         node.classList.add("arrive");
+        node.addEventListener("animationend", function done(event) {
+          if (event.target !== node) return;
+          node.removeEventListener("animationend", done);
+          node.classList.remove("arrive");
+        });
       }
     }
 
@@ -1386,6 +1436,7 @@
       player.pause();
       player.removeAttribute("src");
       player.load();
+      document.querySelector("#play-narration").hidden = true;
       quiz = null;
       places.summary = 0;
       clearQuizView();
@@ -1457,6 +1508,7 @@
           return;
         }
         summaryEl.textContent = result.data.summary;
+        if (summaryEl.scrollIntoView) summaryEl.scrollIntoView(true);
         summaryTokens = wordsFromText(result.data.summary);
         places.summary = 0;
         speedSummaryBtn.disabled = summaryTokens.length === 0;
@@ -1498,6 +1550,9 @@
           return;
         }
         player.src = result.data.audio_url;
+        player.load();
+        document.querySelector("#play-narration").hidden = false;
+        if (player.scrollIntoView) player.scrollIntoView(true);
         if (result.data.voice === "windows-local") {
           podcastStatus.textContent = "Narration ready. The script came from the AI model. The natural voice was unavailable, so this file uses the Windows voice on this computer.";
         } else {
@@ -1516,7 +1571,7 @@
           mode: "podcast"
         });
       }).catch(function () {
-        podcastStatus.textContent = "The narration could not be created. Open FlashRead from the local server and try again.";
+        podcastStatus.textContent = "The narration could not be created. Keep this screen open and try again.";
       }).then(function () {
         busy.podcast = false;
         podcastBtn.disabled = false;
@@ -1702,6 +1757,25 @@
       showRead("summary");
     });
     podcastBtn.addEventListener("click", generatePodcast);
+    document.querySelector("#play-narration").addEventListener("click", function () {
+      var started = player.play();
+      if (started && started.catch) {
+        started.catch(function () {
+          podcastStatus.textContent = "Tap the audio bar to start the narration.";
+        });
+      }
+    });
+    document.querySelector("#use-sample").addEventListener("click", function () {
+      setHomeStatus("Opening the sample…");
+      fetch("media/sample-reading.pdf").then(function (response) {
+        if (!response.ok) throw new Error("missing");
+        return response.arrayBuffer();
+      }).then(function (buffer) {
+        loadFile(new File([buffer], "sample-reading.pdf", { type: "application/pdf" }));
+      }).catch(function () {
+        setHomeStatus("The sample PDF could not be opened.");
+      });
+    });
     quizNext.addEventListener("click", function () {
       if (!quiz) return;
       quiz.pos += 1;

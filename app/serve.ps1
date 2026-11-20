@@ -37,6 +37,7 @@ $types = @{
   ".mp4"  = "video/mp4"
   ".wav"  = "audio/wav"
   ".mp3"  = "audio/mpeg"
+  ".pdf"  = "application/pdf"
 }
 
 New-Item -ItemType Directory -Force -Path $narrationDir | Out-Null
