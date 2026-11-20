@@ -157,6 +157,12 @@ function Receive-Request($stream) {
   $path = ($target -split "\?")[0]
   $path = [Uri]::UnescapeDataString($path)
 
+  $rangeStart = -1
+  $rangeEnd = ""
+  if ($headerText -match "(?im)^Range:\s*bytes=(\d*)-(\d*)") {
+    if ($Matches[1] -ne "") { $rangeStart = [int64]$Matches[1] }
+    $rangeEnd = $Matches[2]
+  }
   $body = ""
   if ($contentLength -gt 0 -and $data.Count -gt $headerLength) {
     $count = [Math]::Min($contentLength, $data.Count - $headerLength)
@@ -169,7 +175,9 @@ function Receive-Request($stream) {
     TooLarge = $false
     Method   = $method
     Path     = $path
-    Body     = $body
+    Body       = $body
+    RangeStart = $rangeStart
+    RangeEnd   = $rangeEnd
   }
 }
 
@@ -566,10 +574,37 @@ function Handle-Podcast($stream, [string]$body) {
   }
 }
 
-function Send-File($stream, [string]$file) {
+function Send-File($stream, [string]$file, $rangeStart, [string]$rangeEnd) {
   $type = $types[[System.IO.Path]::GetExtension($file).ToLower()]
   if (-not $type) { $type = "application/octet-stream" }
-  Send $stream "200 OK" $type ([System.IO.File]::ReadAllBytes($file))
+  $bytes = [System.IO.File]::ReadAllBytes($file)
+  $total = $bytes.Length
+  if ($rangeStart -ge 0) {
+    $start = $rangeStart
+    if ($start -ge $total) {
+      $head = "HTTP/1.1 416 Range Not Satisfiable`r`nContent-Range: bytes */$total`r`nContent-Length: 0`r`nConnection: close`r`n`r`n"
+      $headBytes = [System.Text.Encoding]::ASCII.GetBytes($head)
+      $stream.Write($headBytes, 0, $headBytes.Length)
+      return
+    }
+    $end = $total - 1
+    if ($rangeEnd -ne "") {
+      $parsedEnd = [int64]$rangeEnd
+      if ($parsedEnd -lt $end) { $end = $parsedEnd }
+    }
+    $count = [int]($end - $start + 1)
+    $slice = New-Object byte[] $count
+    [Array]::Copy($bytes, $start, $slice, 0, $count)
+    $head = "HTTP/1.1 206 Partial Content`r`nContent-Type: $type`r`nAccept-Ranges: bytes`r`nContent-Range: bytes $start-$end/$total`r`nContent-Length: $count`r`nConnection: close`r`nCache-Control: no-store`r`n`r`n"
+    $headBytes = [System.Text.Encoding]::ASCII.GetBytes($head)
+    $stream.Write($headBytes, 0, $headBytes.Length)
+    $stream.Write($slice, 0, $slice.Length)
+    return
+  }
+  $head = "HTTP/1.1 200 OK`r`nContent-Type: $type`r`nAccept-Ranges: bytes`r`nContent-Length: $total`r`nConnection: close`r`nCache-Control: no-store`r`n`r`n"
+  $headBytes = [System.Text.Encoding]::ASCII.GetBytes($head)
+  $stream.Write($headBytes, 0, $headBytes.Length)
+  if ($total -gt 0) { $stream.Write($bytes, 0, $total) }
 }
 
 try {
@@ -611,7 +646,7 @@ try {
       $rootPrefix = $root.TrimEnd("\") + "\"
 
       if ($file.StartsWith($rootPrefix, [System.StringComparison]::OrdinalIgnoreCase) -and (Test-Path -LiteralPath $file -PathType Leaf)) {
-        Send-File $stream $file
+        Send-File $stream $file $request.RangeStart $request.RangeEnd
       } else {
         Send $stream "404 Not Found" "text/plain; charset=utf-8" ([System.Text.Encoding]::ASCII.GetBytes("Not found"))
       }

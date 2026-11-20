@@ -64,7 +64,10 @@
 
     .backdrop {
       position: fixed;
-      inset: 0;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
       z-index: 0;
       overflow: hidden;
       background: #14120f;
@@ -73,16 +76,25 @@
     .backdrop video,
     .backdrop img {
       position: absolute;
-      inset: 0;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
       width: 100%;
       height: 100%;
       object-fit: cover;
     }
 
+    .backdrop video { opacity: 0; }
+    .backdrop video.is-playing { opacity: 1; }
+
     .backdrop::after {
       content: "";
       position: absolute;
-      inset: 0;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
       background:
         linear-gradient(to bottom, rgba(12, 10, 8, 0.18), rgba(12, 10, 8, 0.08) 42%, rgba(12, 10, 8, 0.38));
     }
@@ -662,10 +674,10 @@
 </head>
 <body class="on-home intro">
   <div class="backdrop" aria-hidden="true">
-    <video id="bg-video" autoplay muted loop playsinline preload="auto">
+    <video id="bg-video" autoplay muted loop playsinline webkit-playsinline preload="auto" poster="media/home-poster.jpg">
       <source src="media/home.mp4" type="video/mp4" />
     </video>
-    <img id="bg-still" alt="" hidden />
+    <img id="bg-still" src="media/home-poster.jpg" alt="" />
   </div>
   <div class="shell">
     <section id="view-home" class="home">
@@ -947,36 +959,54 @@
 
     function captureFrame() {
       if (!bgVideo || bgVideo.readyState < 2 || !bgVideo.videoWidth) return "";
-      var canvas = document.createElement("canvas");
-      canvas.width = bgVideo.videoWidth;
-      canvas.height = bgVideo.videoHeight;
-      canvas.getContext("2d").drawImage(bgVideo, 0, 0, canvas.width, canvas.height);
-      return canvas.toDataURL("image/jpeg", 0.86);
+      try {
+        var canvas = document.createElement("canvas");
+        canvas.width = bgVideo.videoWidth;
+        canvas.height = bgVideo.videoHeight;
+        var ctx = canvas.getContext("2d");
+        ctx.drawImage(bgVideo, 0, 0, canvas.width, canvas.height);
+        var px = ctx.getImageData(Math.floor(canvas.width / 2), Math.floor(canvas.height / 2), 1, 1).data;
+        if (px[0] + px[1] + px[2] < 12) return "";
+        return canvas.toDataURL("image/jpeg", 0.86);
+      } catch (err) {
+        return "";
+      }
     }
 
     var introDismissed = false;
+    var posterFile = "media/home-poster.jpg";
+
+    function showStill(frame) {
+      if (!bgStill) return;
+      if (frame) bgStill.src = frame;
+      else if (!bgStill.getAttribute("src")) bgStill.src = posterFile;
+      if (bgVideo) bgVideo.classList.remove("is-playing");
+    }
+
+    function playIntroVideo() {
+      if (!bgVideo || introDismissed) return;
+      bgVideo.muted = true;
+      bgVideo.defaultMuted = true;
+      bgVideo.playsInline = true;
+      bgVideo.setAttribute("playsinline", "");
+      bgVideo.setAttribute("webkit-playsinline", "");
+      var playing = bgVideo.play();
+      if (playing && playing.catch) playing.catch(function () {});
+    }
 
     function setBackdrop(useStill) {
       if (!bgVideo || !bgStill) return;
       var hold = introDismissed && !useStill;
       document.body.classList.toggle("on-home", !useStill || hold);
-      if (useStill) {
-        var frame = captureFrame() || posterUrl;
-        if (frame) bgStill.src = frame;
+      if (useStill || hold) {
+        var frame = captureFrame() || posterUrl || posterFile;
+        showStill(frame);
         bgVideo.pause();
-        bgStill.hidden = false;
-        bgVideo.hidden = true;
-      } else if (hold) {
-        bgStill.hidden = true;
-        bgVideo.hidden = false;
-        bgVideo.pause();
-      } else {
-        bgStill.hidden = true;
-        bgVideo.hidden = false;
-        if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-          var playing = bgVideo.play();
-          if (playing && playing.catch) playing.catch(function () {});
+        if (hold && bgVideo.readyState >= 1) {
+          try { bgVideo.currentTime = 0; } catch (err) {}
         }
+      } else {
+        playIntroVideo();
       }
     }
 
@@ -991,28 +1021,41 @@
       bgVideo.pause();
       var finish = function () {
         bgVideo.pause();
-        if (bgVideo.hidden && bgStill) {
-          var frame = captureFrame();
-          if (frame) bgStill.src = frame;
-          document.body.classList.add("on-home");
-        }
+        showStill(captureFrame() || posterUrl || posterFile);
+        document.body.classList.add("on-home");
       };
-      var startedAt = bgVideo.currentTime;
-      bgVideo.addEventListener("seeked", function once() {
-        bgVideo.removeEventListener("seeked", once);
+      if (bgVideo.readyState >= 1 && bgVideo.currentTime > 0.05) {
+        bgVideo.addEventListener("seeked", function once() {
+          bgVideo.removeEventListener("seeked", once);
+          finish();
+        });
+        try {
+          bgVideo.currentTime = 0;
+        } catch (err) {
+          finish();
+        }
+      } else {
         finish();
-      });
-      bgVideo.currentTime = 0;
-      if (startedAt < 0.05) finish();
+      }
     }
 
     document.querySelector("#intro-go").addEventListener("click", dismissIntro);
 
     if (bgVideo) {
-      bgVideo.addEventListener("loadeddata", function () {
-        posterUrl = captureFrame();
-        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) setBackdrop(true);
+      bgVideo.muted = true;
+      bgVideo.defaultMuted = true;
+      bgVideo.playsInline = true;
+      bgVideo.setAttribute("playsinline", "");
+      bgVideo.setAttribute("webkit-playsinline", "");
+      bgVideo.addEventListener("playing", function () {
+        if (!introDismissed) bgVideo.classList.add("is-playing");
       });
+      bgVideo.addEventListener("loadeddata", function () {
+        posterUrl = captureFrame() || posterFile;
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) setBackdrop(true);
+        else playIntroVideo();
+      });
+      playIntroVideo();
     }
 
     function showView(name) {
