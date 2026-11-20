@@ -517,6 +517,114 @@
 
     .read-stage.preview-off { grid-template-columns: minmax(0, 1fr); }
 
+    body.mode-read .backdrop::after {
+      background:
+        linear-gradient(180deg, rgba(5, 4, 3, 0.86) 0%, rgba(5, 4, 3, 0.78) 46%, rgba(5, 4, 3, 0.92) 100%);
+    }
+
+    #view-read .panel {
+      background: rgba(12, 11, 10, 0.94);
+      color: #f4efe6;
+      border-color: rgba(255, 255, 255, 0.08);
+      box-shadow: 0 34px 90px rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(16px);
+      padding: 22px 36px 24px;
+    }
+
+    #view-read .kicker {
+      color: rgba(244, 239, 230, 0.38);
+      letter-spacing: 0.24em;
+    }
+
+    #view-read .stage {
+      min-height: 300px;
+      margin: 0;
+      background: radial-gradient(ellipse at center, rgba(255, 236, 214, 0.07), transparent 62%);
+    }
+
+    #view-read .stage::before,
+    #view-read .stage::after {
+      width: 2px;
+      height: 22px;
+      background: #ff5a45;
+      border-radius: 2px;
+    }
+
+    #view-read .stage::after {
+      content: "";
+      position: absolute;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    #view-read .wordline {
+      color: #f7f2ea;
+      font-weight: 500;
+    }
+
+    #view-read .wordline .orp { color: #ff5a45; }
+
+    #view-read .stats {
+      color: rgba(244, 239, 230, 0.46);
+      margin: 0 0 16px;
+    }
+
+    #view-read .meter { margin: 0 0 8px; }
+    #view-read .meter input,
+    #view-read .sliders input[type="range"] { accent-color: #f0e2d0; }
+
+    #view-read .sliders {
+      border-top-color: rgba(255, 255, 255, 0.08);
+    }
+
+    #view-read .sliders label,
+    #view-read .check,
+    #view-read .hint { color: rgba(244, 239, 230, 0.5); }
+
+    #view-read .hint { font-size: 12px; }
+
+    #view-read .primary {
+      background: #f4efe6;
+      color: #141210;
+      border-color: #f4efe6;
+      box-shadow: none;
+    }
+
+    #view-read .quiet {
+      background: transparent;
+      border-color: rgba(255, 255, 255, 0.16);
+      color: #f4efe6;
+    }
+
+    #view-read .context {
+      max-height: 96px;
+      background: rgba(255, 255, 255, 0.04);
+      border-color: rgba(255, 255, 255, 0.08);
+      color: rgba(244, 239, 230, 0.58);
+      font-size: 14px;
+    }
+
+    #view-read .context .current {
+      background: rgba(255, 90, 69, 0.28);
+      color: #fff8f4;
+    }
+
+    #view-read .context .page-mark { color: rgba(244, 239, 230, 0.38); }
+
+    #view-read .dummy-page {
+      background: #161412;
+      color: rgba(244, 239, 230, 0.7);
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+    }
+
+    #view-read .dummy-label { color: rgba(244, 239, 230, 0.38); }
+
+    #view-read .dummy-body .current {
+      background: rgba(255, 90, 69, 0.5);
+      color: #fff8f4;
+    }
+
     .dummy-sheet { position: sticky; top: 16px; }
 
     .dummy-page {
