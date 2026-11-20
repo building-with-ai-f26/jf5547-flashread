@@ -296,30 +296,15 @@
     .choice strong { font-size: 15px; font-weight: 600; }
     .choice span { display: none; }
 
-    .sample-note {
+    #use-sample {
       display: inline-block;
       margin: 22px auto 0;
-      padding: 8px 14px;
-      border-radius: 999px;
-      background: rgba(255, 252, 247, 0.9);
-      color: #1c1915;
-      font-size: 14px;
-    }
-    .sample-row {
-      display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
-      gap: 8px 18px;
-      margin: 10px auto 0;
-    }
-    .sample-row button, .sample-row a {
+      padding: 10px 16px;
       border: 1px solid rgba(255, 255, 255, 0.55);
       border-radius: 999px;
       background: rgba(255, 252, 247, 0.9);
       color: #1c1915;
       font-size: 14px;
-      text-decoration: none;
-      padding: 8px 14px;
     }
 
     .topbar {
@@ -745,11 +730,7 @@
           <span>Turn the document into a short narration you can play.</span>
         </button>
       </div>
-      <p class="sample-note">Don't have a PDF? No problem, use this pre-loaded one.</p>
-      <div class="sample-row">
-        <button id="use-sample" type="button">Read the sample</button>
-        <a href="media/sample-reading.pdf" download="sample-reading.pdf">Download</a>
-      </div>
+      <button id="use-sample" type="button">no pdf, tap here to load a sample</button>
       </div>
     </section>
 
