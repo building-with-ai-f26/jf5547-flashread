@@ -86,8 +86,17 @@
     }
 
     .backdrop img { z-index: 0; }
-    .backdrop video { z-index: 1; }
+    .backdrop video { z-index: 1; pointer-events: none; }
     .backdrop.is-still video { opacity: 0; }
+    .backdrop video::-webkit-media-controls,
+    .backdrop video::-webkit-media-controls-panel,
+    .backdrop video::-webkit-media-controls-start-playback-button,
+    .backdrop video::-webkit-media-controls-overlay-play-button {
+      display: none !important;
+      -webkit-appearance: none;
+      opacity: 0;
+      pointer-events: none;
+    }
 
     .backdrop::after {
       content: "";
@@ -677,22 +686,7 @@
 <body class="on-home intro">
   <div class="backdrop" aria-hidden="true">
     <img id="bg-still" src="media/home-poster.jpg" alt="" />
-    <video id="bg-video" autoplay muted loop playsinline webkit-playsinline preload="auto" poster="media/home-poster.jpg"></video>
-    <script>
-      (function () {
-        var clip = document.getElementById("bg-video");
-        if (!clip) return;
-        clip.muted = true;
-        clip.defaultMuted = true;
-        clip.playsInline = true;
-        clip.setAttribute("muted", "");
-        clip.setAttribute("playsinline", "");
-        clip.setAttribute("webkit-playsinline", "");
-        clip.src = "media/home.mp4";
-        var started = clip.play();
-        if (started && started.catch) started.catch(function () {});
-      })();
-    </script>
+    <video id="bg-video" src="media/home.mp4" autoplay muted loop playsinline webkit-playsinline preload="auto" poster="media/home-poster.jpg"></video>
   </div>
   <div class="shell">
     <section id="view-home" class="home">
@@ -999,13 +993,10 @@
     function playIntroVideo() {
       if (!bgVideo || introDismissed) return;
       if (bgVideo.parentNode) bgVideo.parentNode.classList.remove("is-still");
+      bgVideo.controls = false;
       bgVideo.muted = true;
       bgVideo.defaultMuted = true;
       bgVideo.playsInline = true;
-      bgVideo.setAttribute("muted", "");
-      bgVideo.setAttribute("autoplay", "");
-      bgVideo.setAttribute("playsinline", "");
-      bgVideo.setAttribute("webkit-playsinline", "");
       var playing = bgVideo.play();
       if (playing && playing.catch) playing.catch(function () {});
     }
