@@ -85,12 +85,14 @@
       object-fit: cover;
     }
 
-    .backdrop video { opacity: 0; }
-    .backdrop video.is-playing { opacity: 1; }
+    .backdrop img { z-index: 0; }
+    .backdrop video { z-index: 1; }
+    .backdrop.is-still video { opacity: 0; }
 
     .backdrop::after {
       content: "";
       position: absolute;
+      z-index: 2;
       top: 0;
       right: 0;
       bottom: 0;
@@ -674,10 +676,23 @@
 </head>
 <body class="on-home intro">
   <div class="backdrop" aria-hidden="true">
-    <video id="bg-video" autoplay muted loop playsinline webkit-playsinline preload="auto" poster="media/home-poster.jpg">
-      <source src="media/home.mp4" type="video/mp4" />
-    </video>
     <img id="bg-still" src="media/home-poster.jpg" alt="" />
+    <video id="bg-video" autoplay muted loop playsinline webkit-playsinline preload="auto" poster="media/home-poster.jpg"></video>
+    <script>
+      (function () {
+        var clip = document.getElementById("bg-video");
+        if (!clip) return;
+        clip.muted = true;
+        clip.defaultMuted = true;
+        clip.playsInline = true;
+        clip.setAttribute("muted", "");
+        clip.setAttribute("playsinline", "");
+        clip.setAttribute("webkit-playsinline", "");
+        clip.src = "media/home.mp4";
+        var started = clip.play();
+        if (started && started.catch) started.catch(function () {});
+      })();
+    </script>
   </div>
   <div class="shell">
     <section id="view-home" class="home">
@@ -977,17 +992,18 @@
     var posterFile = "media/home-poster.jpg";
 
     function showStill(frame) {
-      if (!bgStill) return;
-      if (frame) bgStill.src = frame;
-      else if (!bgStill.getAttribute("src")) bgStill.src = posterFile;
-      if (bgVideo) bgVideo.classList.remove("is-playing");
+      if (bgStill && frame) bgStill.src = frame;
+      if (bgVideo && bgVideo.parentNode) bgVideo.parentNode.classList.add("is-still");
     }
 
     function playIntroVideo() {
       if (!bgVideo || introDismissed) return;
+      if (bgVideo.parentNode) bgVideo.parentNode.classList.remove("is-still");
       bgVideo.muted = true;
       bgVideo.defaultMuted = true;
       bgVideo.playsInline = true;
+      bgVideo.setAttribute("muted", "");
+      bgVideo.setAttribute("autoplay", "");
       bgVideo.setAttribute("playsinline", "");
       bgVideo.setAttribute("webkit-playsinline", "");
       var playing = bgVideo.play();
@@ -1048,8 +1064,10 @@
       bgVideo.setAttribute("playsinline", "");
       bgVideo.setAttribute("webkit-playsinline", "");
       bgVideo.addEventListener("playing", function () {
-        if (!introDismissed) bgVideo.classList.add("is-playing");
+        if (!introDismissed && bgVideo.parentNode) bgVideo.parentNode.classList.remove("is-still");
       });
+      bgVideo.addEventListener("loadedmetadata", playIntroVideo);
+      bgVideo.addEventListener("canplay", playIntroVideo);
       bgVideo.addEventListener("loadeddata", function () {
         posterUrl = captureFrame() || posterFile;
         if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) setBackdrop(true);
